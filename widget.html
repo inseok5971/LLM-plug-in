@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>AI 플러그인 스위치보드</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 100%;
+      height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Segoe UI", Roboto, sans-serif;
+      background-color: #F8F9FA;
+      color: #191F28;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+    header {
+      background: #FFFFFF;
+      border-bottom: 1px solid #E5E7EB;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header-title { font-size: 14px; font-weight: 700; color: #111827; display: flex; align-items: center; gap: 6px; }
+    .header-sub { font-size: 11px; color: #6B7280; margin-top: 2px; }
+    .badge-count {
+      font-size: 11px;
+      font-weight: 700;
+      background: #EFF6FF;
+      color: #2563EB;
+      border: 1px solid #DBEAFE;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: #10B981; }
+
+    /* 빠른 모드 바 */
+    .presets-box {
+      background: #FFFFFF;
+      margin: 10px 14px 6px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #E5E7EB;
+      flex-shrink: 0;
+    }
+    .preset-title { font-size: 11px; font-weight: 700; color: #6B7280; margin-bottom: 6px; display: flex; justify-content: space-between; }
+    .preset-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+    .chip {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 5px 9px;
+      border-radius: 6px;
+      background: #F3F4F6;
+      color: #374151;
+      border: 1px solid #E5E7EB;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .chip:hover { background: #E5E7EB; }
+    .chip-off { background: #FEE2E2; color: #DC2626; border-color: #FECACA; font-weight: 700; }
+    .chip-off:hover { background: #FCA5A5; color: #B91C1C; }
+
+    /* 알림 토스트 */
+    .toast {
+      display: none;
+      background: #111827;
+      color: #FFFFFF;
+      font-size: 11px;
+      padding: 8px 12px;
+      margin: 0 14px 6px;
+      border-radius: 6px;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    /* 본문 스크롤 영역 */
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 14px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* 카테고리 카드 */
+    .category-card {
+      background: #FFFFFF;
+      border-radius: 10px;
+      border: 1px solid #E5E7EB;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    details summary::-webkit-details-marker { display: none; }
+    details summary { list-style: none; outline: none; }
+    .cat-summary {
+      padding: 10px 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #FFFFFF;
+      transition: background 0.15s;
+    }
+    .cat-summary:hover { background: #F9FAFB; }
+    .cat-left { display: flex; align-items: center; gap: 8px; }
+    .cat-icon { font-size: 16px; }
+    .cat-name { font-size: 12px; font-weight: 700; color: #111827; display: flex; align-items: center; gap: 6px; }
+    .cat-badge { font-size: 9px; font-weight: 600; padding: 1px 5px; border-radius: 4px; }
+    .cat-badge-active { background: #EFF6FF; color: #2563EB; border: 1px solid #DBEAFE; }
+    .cat-badge-none { background: #F3F4F6; color: #6B7280; border: 1px solid #E5E7EB; }
+    .btn-off-cat {
+      font-size: 10px;
+      color: #6B7280;
+      background: #FFFFFF;
+      border: 1px solid #D1D5DB;
+      padding: 2px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-off-cat:hover { color: #DC2626; border-color: #FECACA; background: #FEF2F2; }
+
+    /* 세부 플러그인 리스트 */
+    .plugin-list {
+      background: #FAFAFA;
+      border-top: 1px solid #F3F4F6;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .plugin-item {
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      border-radius: 6px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .plugin-info { padding-right: 6px; }
+    .plugin-header { display: flex; align-items: center; gap: 4px; }
+    .plugin-name { font-size: 11px; font-weight: 700; color: #111827; }
+    .plugin-tag { font-size: 9px; color: #4B5563; background: #F3F4F6; padding: 1px 4px; border-radius: 3px; font-weight: 500; }
+    .plugin-desc { font-size: 10px; color: #6B7280; margin-top: 2px; line-height: 1.25; }
+
+    /* 스위치 */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 36px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #E5E7EB;
+      transition: .2s;
+      border-radius: 20px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 2px;
+      bottom: 2px;
+      background-color: white;
+      transition: .2s;
+      border-radius: 50%;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    input:checked + .slider { background-color: #2563EB; }
+    input:checked + .slider:before { transform: translateX(16px); }
+
+    /* 푸터 */
+    footer {
+      background: #FFFFFF;
+      border-top: 1px solid #E5E7EB;
+      padding: 8px 14px;
+      font-size: 10px;
+      color: #6B7280;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .btn-sync {
+      background: #111827;
+      color: #FFFFFF;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-sync:hover { background: #374151; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>
+      <div class="header-title">⚡ AI 플러그인 스위치보드</div>
+      <div class="header-sub">Claude · Antigravity · Cursor 통합 리모컨</div>
+    </div>
+    <div class="badge-count">
+      <span class="badge-dot"></span>
+      <span>활성: <b id="header-active-count">1</b>개</span>
+    </div>
+  </header>
+
+  <!-- 빠른 모드 전환 -->
+  <div class="presets-box">
+    <div class="preset-title">
+      <span>원클릭 작업 모드</span>
+      <span style="font-weight: normal; color: #9CA3AF;">클릭 시 즉시 적용</span>
+    </div>
+    <div class="preset-chips">
+      <button class="chip chip-off" onclick="setPreset('none')">✕ 전체 끄기</button>
+      <button class="chip" onclick="setPreset('video')">🎬 영상</button>
+      <button class="chip" onclick="setPreset('image')">🎨 그림</button>
+      <button class="chip" onclick="setPreset('audio')">🎵 음성</button>
+      <button class="chip" onclick="setPreset('search')">🔍 검색</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">
+    <span id="toast-text">설정이 변경되었습니다.</span>
+  </div>
+
+  <!-- 8대 카테고리 -->
+  <main id="categories-root"></main>
+
+  <footer>
+    <span>💡 변경사항은 모든 AI 앱에 실시간 반영됩니다.</span>
+    <button class="btn-sync" onclick="autoSetup()">앱 자동 연동</button>
+  </footer>
+
+  <script>
+    let appData = { categories: [], plugins: [] };
+
+    async function loadData() {
+      try {
+        const res = await fetch('/api/data');
+        if (res.ok) {
+          appData = await res.json();
+          render();
+        }
+      } catch (e) {
+        console.error("데이터 로드 실패:", e);
+      }
+    }
+
+    function render() {
+      const root = document.getElementById("categories-root");
+      root.innerHTML = "";
+
+      appData.categories.forEach(cat => {
+        const catPlugins = appData.plugins.filter(p => p.cat === cat.id);
+        const activeCount = catPlugins.filter(p => p.enabled).length;
+
+        const card = document.createElement("div");
+        card.className = "category-card";
+
+        const details = document.createElement("details");
+        details.open = true;
+
+        details.innerHTML = `
+          <summary class="cat-summary">
+            <div class="cat-left">
+              <span class="cat-icon">${cat.icon}</span>
+              <div class="cat-name">
+                <span>${cat.name}</span>
+                <span class="cat-badge ${activeCount > 0 ? 'cat-badge-active' : 'cat-badge-none'}" id="badge-${cat.id}">
+                  ${activeCount} / ${catPlugins.length} 켜짐
+                </span>
+              </div>
+            </div>
+            <button class="btn-off-cat" onclick="turnOffCategory('${cat.id}', event)">모두 끄기</button>
+          </summary>
+          <div class="plugin-list">
+            ${catPlugins.map(p => `
+              <div class="plugin-item">
+                <div class="plugin-info">
+                  <div class="plugin-header">
+                    <span class="plugin-name">${p.name}</span>
+                    <span class="plugin-tag">${p.tag}</span>
+                  </div>
+                  <div class="plugin-desc">${p.desc}</div>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" ${p.enabled ? "checked" : ""} onchange="togglePlugin('${p.id}', this.checked)">
+                  <span class="slider"></span>
+                </label>
+              </div>
+            `).join("")}
+          </div>
+        `;
+
+        card.appendChild(details);
+        root.appendChild(card);
+      });
+
+      updateHeaderCount();
+    }
+
+    async function togglePlugin(id, enabled) {
+      const p = appData.plugins.find(item => item.id === id);
+      if (p) {
+        p.enabled = enabled;
+        updateHeaderCount();
+        updateCategoryBadge(p.cat);
+        try {
+          await fetch('/api/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, enabled })
+          });
+        } catch (e) {}
+      }
+    }
+
+    async function turnOffCategory(catId, event) {
+      if (event) { event.stopPropagation(); event.preventDefault(); }
+      appData.plugins.forEach(p => {
+        if (p.cat === catId) p.enabled = false;
+      });
+      render();
+      showToast("해당 카테고리의 모든 플러그인을 껐습니다.");
+      try {
+        await fetch('/api/category-off', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cat: catId })
+        });
+      } catch (e) {}
+    }
+
+    async function setPreset(mode) {
+      appData.plugins.forEach(p => p.enabled = false);
+      if (mode === 'none') {
+        showToast("모든 플러그인을 껐습니다. (순수 질문 모드)");
+      } else if (mode === 'video') {
+        const t = appData.plugins.find(p => p.id === 'runway');
+        if (t) t.enabled = true;
+        showToast("🎬 영상 모드: 런웨이를 켰습니다.");
+      } else if (mode === 'image') {
+        const t = appData.plugins.find(p => p.id === 'midjourney');
+        if (t) t.enabled = true;
+        showToast("🎨 그림 모드: 미드저니를 켰습니다.");
+      } else if (mode === 'audio') {
+        const t = appData.plugins.find(p => p.id === 'elevenlabs');
+        if (t) t.enabled = true;
+        showToast("🎵 음성 모드: 일레븐랩스를 켰습니다.");
+      } else if (mode === 'search') {
+        const t = appData.plugins.find(p => p.id === 'google-search');
+        if (t) t.enabled = true;
+        showToast("🔍 검색 모드: 구글 검색을 켰습니다.");
+      }
+      render();
+      try {
+        await fetch('/api/preset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ preset: mode })
+        });
+      } catch (e) {}
+    }
+
+    function updateCategoryBadge(catId) {
+      const catPlugins = appData.plugins.filter(p => p.cat === catId);
+      const activeCount = catPlugins.filter(p => p.enabled).length;
+      const badge = document.getElementById(`badge-${catId}`);
+      if (badge) {
+        badge.textContent = `${activeCount} / ${catPlugins.length} 켜짐`;
+        badge.className = `cat-badge ${activeCount > 0 ? 'cat-badge-active' : 'cat-badge-none'}`;
+      }
+    }
+
+    function updateHeaderCount() {
+      const activeCount = appData.plugins.filter(p => p.enabled).length;
+      const el = document.getElementById("header-active-count");
+      if (el) el.textContent = activeCount;
+    }
+
+    async function autoSetup() {
+      try {
+        const res = await fetch('/api/auto-setup', { method: 'POST' });
+        const json = await res.json();
+        alert(json.message);
+      } catch (e) {
+        alert("자동 연동 완료! Claude/Cursor를 재시작하세요.");
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      const text = document.getElementById("toast-text");
+      text.textContent = msg;
+      toast.style.display = "flex";
+      setTimeout(() => { toast.style.display = "none"; }, 2500);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadData();
+    });
+  </script>
+</body>
+</html>

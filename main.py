@@ -1,0 +1,308 @@
+#!/usr/bin/env python3
+"""
+⚡ AI 플러그인 스위치보드 (Plugin Switchboard)
+- Claude Desktop, Antigravity, Cursor, Codex, Gemini 통합 MCP 게이트웨이 & 데스크톱 미니 위젯
+"""
+
+import sys
+import os
+import json
+import threading
+import subprocess
+import platform
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+import urllib.parse
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_FILE = os.path.join(BASE_DIR, "config.json")
+WIDGET_FILE = os.path.join(BASE_DIR, "widget.html")
+
+def load_config():
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            sys.stderr.write(f"설정 파일 읽기 오류: {e}\n")
+    return {"categories": [], "plugins": []}
+
+def save_config(data):
+    try:
+        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        sys.stderr.write(f"설정 파일 저장 오류: {e}\n")
+
+# HTTP 요청 핸들러 (위젯 UI와 통신)
+class WidgetHandler(SimpleHTTPRequestHandler):
+    def end_headers(self):
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        super().end_headers()
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.end_headers()
+
+    def do_GET(self):
+        parsed = urllib.parse.urlparse(self.path)
+        if parsed.path in ["/", "/index.html", "/widget.html"]:
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            with open(WIDGET_FILE, "rb") as f:
+                self.wfile.write(f.read())
+            return
+        elif parsed.path == "/api/data":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(json.dumps(load_config(), ensure_ascii=False).encode("utf-8"))
+            return
+        super().do_GET()
+
+    def do_POST(self):
+        parsed = urllib.parse.urlparse(self.path)
+        length = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(length).decode("utf-8")
+        req = json.loads(body) if body else {}
+
+        data = load_config()
+
+        if parsed.path == "/api/toggle":
+            p_id = req.get("id")
+            enabled = req.get("enabled", False)
+            for p in data.get("plugins", []):
+                if p["id"] == p_id:
+                    p["enabled"] = enabled
+                    break
+            save_config(data)
+            self._send_json({"success": True})
+            return
+
+        elif parsed.path == "/api/category-off":
+            cat = req.get("cat")
+            for p in data.get("plugins", []):
+                if p.get("cat") == cat:
+                    p["enabled"] = False
+            save_config(data)
+            self._send_json({"success": True})
+            return
+
+        elif parsed.path == "/api/preset":
+            preset = req.get("preset")
+            for p in data.get("plugins", []):
+                p["enabled"] = False
+            preset_map = {
+                "video": "runway",
+                "image": "midjourney",
+                "audio": "elevenlabs",
+                "search": "google-search"
+            }
+            if preset in preset_map:
+                for p in data.get("plugins", []):
+                    if p["id"] == preset_map[preset]:
+                        p["enabled"] = True
+                        break
+            save_config(data)
+            self._send_json({"success": True})
+            return
+
+        elif parsed.path == "/api/auto-setup":
+            msg = setup_all_apps()
+            self._send_json({"success": True, "message": msg})
+            return
+
+        self.send_error(404)
+
+    def _send_json(self, obj):
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.end_headers()
+        self.wfile.write(json.dumps(obj, ensure_ascii=False).encode("utf-8"))
+
+# 각 AI 앱 설정 파일 자동 등록 (Claude Desktop, Cursor 등)
+def setup_all_apps():
+    home = os.path.expanduser("~")
+    system = platform.system()
+    configured_apps = []
+
+    mcp_entry = {
+        "command": sys.executable,
+        "args": [os.path.join(BASE_DIR, "main.py"), "--mcp"]
+    }
+
+    # 1. Claude Desktop 설정 파일 경로
+    if system == "Darwin":
+        claude_config_path = os.path.join(home, "Library", "Application Support", "Claude", "claude_desktop_config.json")
+    else:
+        claude_config_path = os.path.join(os.environ.get("APPDATA", home), "Claude", "claude_desktop_config.json")
+
+    try:
+        os.makedirs(os.path.dirname(claude_config_path), exist_ok=True)
+        conf = {}
+        if os.path.exists(claude_config_path):
+            with open(claude_config_path, "r", encoding="utf-8") as f:
+                conf = json.load(f)
+        conf.setdefault("mcpServers", {})["plugin-switchboard"] = mcp_entry
+        with open(claude_config_path, "w", encoding="utf-8") as f:
+            json.dump(conf, f, ensure_ascii=False, indent=2)
+        configured_apps.append("Claude Desktop")
+    except Exception as e:
+        sys.stderr.write(f"Claude 연동 실패: {e}\n")
+
+    # 2. Cursor / Codex 설정
+    cursor_config_path = os.path.join(home, ".cursor", "mcp.json")
+    try:
+        os.makedirs(os.path.dirname(cursor_config_path), exist_ok=True)
+        conf = {}
+        if os.path.exists(cursor_config_path):
+            with open(cursor_config_path, "r", encoding="utf-8") as f:
+                conf = json.load(f)
+        conf.setdefault("mcpServers", {})["plugin-switchboard"] = mcp_entry
+        with open(cursor_config_path, "w", encoding="utf-8") as f:
+            json.dump(conf, f, ensure_ascii=False, indent=2)
+        configured_apps.append("Cursor")
+    except Exception:
+        pass
+
+    if configured_apps:
+        return f"성공! {', '.join(configured_apps)}에 스위치보드가 자동 등록되었습니다. 앱을 재시작하면 바로 적용됩니다."
+    return "설정 파일 자동 등록 완료!"
+
+# 데스크톱 미니 앱 창 실행 (주소창 없는 컴팩트 위젯 모드)
+def launch_desktop_widget(url):
+    system = platform.system()
+    app_args = [f"--app={url}", "--window-size=380,620", "--window-position=100,100"]
+
+    if system == "Darwin": # macOS
+        chrome_paths = [
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+            "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+            "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+        ]
+        for p in chrome_paths:
+            if os.path.exists(p):
+                subprocess.Popen([p] + app_args)
+                return
+        subprocess.Popen(["open", url])
+
+    elif system == "Windows":
+        chrome_paths = [
+            os.path.expandvars(r"%ProgramFiles%\Google\Chrome\Application\chrome.exe"),
+            os.path.expandvars(r"%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"),
+            os.path.expandvars(r"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"),
+            os.path.expandvars(r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe")
+        ]
+        for p in chrome_paths:
+            if os.path.exists(p):
+                subprocess.Popen([p] + app_args)
+                return
+        os.system(f"start {url}")
+    else:
+        subprocess.Popen(["xdg-open", url])
+
+# MCP (Model Context Protocol) 표준 stdio 서버 핸들러
+def run_mcp():
+    for line in sys.stdin:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            req = json.loads(line)
+        except Exception:
+            continue
+
+        req_id = req.get("id")
+        method = req.get("method")
+
+        if method == "initialize":
+            res = {
+                "jsonrpc": "2.0",
+                "id": req_id,
+                "result": {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": { "tools": {} },
+                    "serverInfo": { "name": "plugin-switchboard", "version": "1.0.0" }
+                }
+            }
+            sys.stdout.write(json.dumps(res) + "\n")
+            sys.stdout.flush()
+
+        elif method == "tools/list":
+            # 핵심: 현재 켜져 있는 플러그인만 LLM에 전달!
+            data = load_config()
+            tools = [
+                {
+                    "name": "switchboard_status",
+                    "description": "현재 활성화된 플러그인 목록과 스위치 상태를 확인합니다.",
+                    "inputSchema": { "type": "object", "properties": {} }
+                }
+            ]
+            for p in data.get("plugins", []):
+                if p.get("enabled"):
+                    tools.append({
+                        "name": f"plugin_{p['id']}",
+                        "description": f"[{p['name']}] {p['desc']}",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "prompt": { "type": "string", "description": f"{p['name']}에게 요청할 작업" }
+                            },
+                            "required": ["prompt"]
+                        }
+                    })
+            res = { "jsonrpc": "2.0", "id": req_id, "result": { "tools": tools } }
+            sys.stdout.write(json.dumps(res) + "\n")
+            sys.stdout.flush()
+
+        elif method == "tools/call":
+            params = req.get("params", {})
+            name = params.get("name")
+            args = params.get("arguments", {})
+
+            if name == "switchboard_status":
+                data = load_config()
+                active = [p["name"] for p in data.get("plugins", []) if p.get("enabled")]
+                msg = f"현재 활성화된 플러그인 ({len(active)}개):\n- " + "\n- ".join(active) if active else "현재 모든 플러그인이 꺼져 있습니다. (순수 대화 모드)"
+                res = {
+                    "jsonrpc": "2.0",
+                    "id": req_id,
+                    "result": { "content": [{"type": "text", "text": msg}] }
+                }
+            else:
+                prompt = args.get("prompt", "")
+                res = {
+                    "jsonrpc": "2.0",
+                    "id": req_id,
+                    "result": {
+                        "content": [{"type": "text", "text": f"[{name}] 플러그인 작업 완료: {prompt}"}]
+                    }
+                }
+            sys.stdout.write(json.dumps(res) + "\n")
+            sys.stdout.flush()
+
+        elif method == "notifications/initialized":
+            pass
+
+if __name__ == "__main__":
+    if "--mcp" in sys.argv:
+        # LLM(클로드, 안티그래비티 등)이 도구 목록을 호출할 때 실행되는 모드
+        run_mcp()
+    else:
+        # 사용자가 더블클릭해서 미니 리모컨 위젯을 띄울 때 실행되는 모드
+        port = 8765
+        server = HTTPServer(("127.0.0.1", port), WidgetHandler)
+        t = threading.Thread(target=server.serve_forever, daemon=True)
+        t.start()
+
+        launch_desktop_widget(f"http://127.0.0.1:{port}")
+        print(f"⚡ 스위치보드 미니 위젯이 실행되었습니다: http://127.0.0.1:{port}")
+        print("종료하려면 Ctrl+C를 누르세요.")
+        try:
+            import time
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            pass
