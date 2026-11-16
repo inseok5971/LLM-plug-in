@@ -1,0 +1,225 @@
+{
+  "categories": [
+    {
+      "id": "video",
+      "icon": "🎬",
+      "name": "영상 만들기 및 편집",
+      "description": "글이나 사진을 넣으면 자동으로 고화질 동영상을 만들어주는 플러그인 모음"
+    },
+    {
+      "id": "image",
+      "icon": "🎨",
+      "name": "그림 및 디자인",
+      "description": "원하는 그림, 일러스트, 캐릭터, 로고를 그려주는 플러그인 모음"
+    },
+    {
+      "id": "audio",
+      "icon": "🎵",
+      "name": "목소리 및 음악",
+      "description": "AI 성우 목소리 생성, 배경음악 작곡, 음성 녹음 텍스트 변환 플러그인 모음"
+    },
+    {
+      "id": "search",
+      "icon": "🔍",
+      "name": "인터넷 검색 및 최신 정보",
+      "description": "최신 뉴스, 실시간 주가, 네이버/구글 검색 결과를 가져오는 플러그인 모음"
+    },
+    {
+      "id": "office",
+      "icon": "📄",
+      "name": "문서·업무·이메일",
+      "description": "PDF 요약, 엑셀 표 분석, 노션 정리, 캘린더 일정 등록, 이메일 발송 플러그인 모음"
+    },
+    {
+      "id": "system",
+      "icon": "💻",
+      "name": "내 컴퓨터 파일 & 시스템 제어",
+      "description": "컴퓨터 안의 폴더/파일을 읽고 쓰거나, 명령어를 대신 실행하는 플러그인 모음"
+    },
+    {
+      "id": "browser",
+      "icon": "🌐",
+      "name": "웹 브라우저 자동 조작",
+      "description": "AI가 직접 브라우저를 띄워 클릭하고 로그인해서 정보를 가져오는 플러그인 모음"
+    },
+    {
+      "id": "data",
+      "icon": "📊",
+      "name": "통계 & 데이터 분석",
+      "description": "데이터 표를 분석하고 알기 쉬운 그래프와 차트로 시각화해주는 플러그인 모음"
+    }
+  ],
+  "plugins": [
+    {
+      "id": "runway",
+      "name_ko": "런웨이 (Runway Gen-3)",
+      "name_en": "runway-gen3",
+      "category": "video",
+      "tag": "실사 영화급",
+      "description": "할리우드 영화 수준의 초고화질 실사 영상을 만듭니다.",
+      "enabled": false
+    },
+    {
+      "id": "luma",
+      "name_ko": "루마 드림머신 (Luma DreamMachine)",
+      "name_en": "luma-dreammachine",
+      "category": "video",
+      "tag": "카메라 무빙",
+      "description": "자연스러운 카메라 앵글 회전과 시점 이동에 특화되어 있습니다.",
+      "enabled": false
+    },
+    {
+      "id": "kling",
+      "name_ko": "클링 (Kling AI)",
+      "name_en": "kling-ai",
+      "category": "video",
+      "tag": "인물 동작 자연스러움",
+      "description": "사람의 얼굴 표정, 걷기나 행동 표현이 가장 왜곡 없이 자연스럽습니다.",
+      "enabled": false
+    },
+    {
+      "id": "pika",
+      "name_ko": "피카 (Pika 2.0)",
+      "name_en": "pika-effects",
+      "category": "video",
+      "tag": "특수효과",
+      "description": "물체가 녹아내리거나 폭발하는 등의 재미있는 숏폼 특수효과를 만듭니다.",
+      "enabled": false
+    },
+    {
+      "id": "midjourney",
+      "name_ko": "미드저니 (Midjourney 연동)",
+      "name_en": "midjourney",
+      "category": "image",
+      "tag": "최고 퀄리티",
+      "description": "현존 최고 수준의 예술적 퀄리티와 일러스트 그림을 생성합니다.",
+      "enabled": false
+    },
+    {
+      "id": "flux",
+      "name_ko": "플럭스 (FLUX.1)",
+      "name_en": "flux-image",
+      "category": "image",
+      "tag": "글자 표기 최강",
+      "description": "그림 안에 원하는 영문 글자나 간판을 정확하게 새겨 넣습니다.",
+      "enabled": false
+    },
+    {
+      "id": "dalle",
+      "name_ko": "달리 3 (DALL-E 3)",
+      "name_en": "dall-e-3",
+      "category": "image",
+      "tag": "프롬프트 정확도",
+      "description": "복잡한 설명문도 찰떡같이 이해하고 디테일하게 그려냅니다.",
+      "enabled": false
+    },
+    {
+      "id": "elevenlabs",
+      "name_ko": "일레븐랩스 (ElevenLabs 목소리)",
+      "name_en": "elevenlabs-voice",
+      "category": "audio",
+      "tag": "AI 성우",
+      "description": "진짜 사람처럼 감정이 실린 자연스러운 목소리로 오디오를 녹음합니다.",
+      "enabled": false
+    },
+    {
+      "id": "suno",
+      "name_ko": "수노 (Suno 음악 작곡)",
+      "name_en": "suno-music",
+      "category": "audio",
+      "tag": "작곡/BGM",
+      "description": "가사와 장르를 입력하면 보컬이 포함된 완성형 노래를 작곡합니다.",
+      "enabled": false
+    },
+    {
+      "id": "whisper",
+      "name_ko": "위스퍼 (Whisper 음성 받아쓰기)",
+      "name_en": "whisper-stt",
+      "category": "audio",
+      "tag": "음성 회의록",
+      "description": "녹음된 통화 파일이나 강의 오디오를 정확한 텍스트로 풀어냅니다.",
+      "enabled": false
+    },
+    {
+      "id": "google-search",
+      "name_ko": "구글 실시간 웹 검색",
+      "name_en": "google-search",
+      "category": "search",
+      "tag": "국내외 뉴스",
+      "description": "오늘의 최신 뉴스, 실시간 주가, 블로그 글을 실시간으로 검색합니다.",
+      "enabled": true
+    },
+    {
+      "id": "perplexity",
+      "name_ko": "퍼플렉시티 (Perplexity 리서치)",
+      "name_en": "perplexity-research",
+      "category": "search",
+      "tag": "출처 포함 요약",
+      "description": "신뢰할 수 있는 출처 링크와 함께 핵심 내용만 요약 검색합니다.",
+      "enabled": false
+    },
+    {
+      "id": "pdf-analyzer",
+      "name_ko": "스마트 PDF 문서 분석기",
+      "name_en": "pdf-analyzer",
+      "category": "office",
+      "tag": "문서 요약",
+      "description": "100쪽이 넘는 긴 보고서나 계약서 PDF에서 핵심만 찾아 요약합니다.",
+      "enabled": false
+    },
+    {
+      "id": "notion",
+      "name_ko": "노션 (Notion 작업 연동)",
+      "name_en": "notion-workspace",
+      "category": "office",
+      "tag": "메모/페이지",
+      "description": "대화 내용을 내 노션 페이지에 새 메모나 할 일 목록으로 저장합니다.",
+      "enabled": false
+    },
+    {
+      "id": "google-calendar",
+      "name_ko": "구글 캘린더 일정 관리",
+      "name_en": "google-calendar",
+      "category": "office",
+      "tag": "일정 등록",
+      "description": "대화 중에 약속이나 일정을 말하면 내 캘린더에 바로 등록합니다.",
+      "enabled": false
+    },
+    {
+      "id": "filesystem",
+      "name_ko": "컴퓨터 폴더 & 파일 탐색기",
+      "name_en": "local-filesystem",
+      "category": "system",
+      "tag": "내 컴퓨터",
+      "description": "내 컴퓨터의 특정 폴더 안에 있는 파일을 읽거나 새로 저장합니다.",
+      "enabled": false
+    },
+    {
+      "id": "terminal",
+      "name_ko": "터미널 명령어 실행기",
+      "name_en": "terminal-runner",
+      "category": "system",
+      "tag": "명령어",
+      "description": "복잡한 컴퓨터 설정 명령어나 프로그램을 대신 실행해 줍니다.",
+      "enabled": false
+    },
+    {
+      "id": "puppeteer",
+      "name_ko": "웹 브라우저 자동 조작기",
+      "name_en": "browser-puppeteer",
+      "category": "browser",
+      "tag": "자동 클릭",
+      "description": "AI가 직접 브라우저를 열고 클릭하며 사이트에서 정보를 수집합니다.",
+      "enabled": false
+    },
+    {
+      "id": "chart-visualizer",
+      "name_ko": "데이터 차트 시각화 도구",
+      "name_en": "chart-visualizer",
+      "category": "data",
+      "tag": "예쁜 그래프",
+      "description": "숫자 데이터나 엑셀 표를 보기 쉬운 막대/원형 차트 그림으로 만듭니다.",
+      "enabled": false
+    }
+  ]
+}

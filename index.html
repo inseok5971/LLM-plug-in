@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 플러그인 스위치보드</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Segoe UI", Roboto, sans-serif;
+    }
+    details summary::-webkit-details-marker {
+      display: none;
+    }
+    details summary {
+      list-style: none;
+    }
+  </style>
+</head>
+<body class="bg-[#F8F9FA] text-[#191F28] min-h-screen antialiased pb-28">
+
+  <!-- 상단 네비게이션 헤더 -->
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+    <div class="max-w-3xl mx-auto px-5 py-4 flex items-center justify-between">
+      <div>
+        <h1 class="text-lg font-bold tracking-tight text-gray-900 leading-tight">AI 플러그인 스위치보드</h1>
+        <p class="text-xs text-gray-500 mt-0.5">사용할 플러그인만 선택하여 불필요한 호출과 토큰 낭비를 방지합니다.</p>
+      </div>
+      
+      <!-- 활성 상태 배지 -->
+      <div class="flex items-center space-x-2 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="text-xs font-semibold text-gray-700">활성: <b id="header-active-count" class="text-blue-600 font-bold">1</b>개</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-5 pt-6 space-y-4">
+
+    <!-- 1. 심플한 빠른 모드 전환 바 -->
+    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">빠른 모드 전환</span>
+        <span class="text-xs text-gray-400">클릭 시 자동 세팅</span>
+      </div>
+      
+      <div class="flex flex-wrap gap-2">
+        <!-- 전체 끄기 (가장 중요) -->
+        <button type="button" onclick="setPreset('none')" class="flex items-center space-x-1.5 px-3.5 py-2 rounded-lg bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-600 border border-transparent hover:border-red-200 transition-colors text-xs font-semibold">
+          <span>✕</span>
+          <span>전체 끄기 (순수 일반 대화)</span>
+        </button>
+
+        <!-- 영상 모드 -->
+        <button type="button" onclick="setPreset('video')" class="flex items-center space-x-1.5 px-3.5 py-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 transition-colors text-xs font-medium">
+          <span>🎬</span>
+          <span>영상 제작 모드</span>
+        </button>
+
+        <!-- 그림 모드 -->
+        <button type="button" onclick="setPreset('image')" class="flex items-center space-x-1.5 px-3.5 py-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 transition-colors text-xs font-medium">
+          <span>🎨</span>
+          <span>그림·디자인 모드</span>
+        </button>
+
+        <!-- 음성 모드 -->
+        <button type="button" onclick="setPreset('audio')" class="flex items-center space-x-1.5 px-3.5 py-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 transition-colors text-xs font-medium">
+          <span>🎵</span>
+          <span>목소리·음악 모드</span>
+        </button>
+
+        <!-- 검색 모드 -->
+        <button type="button" onclick="setPreset('search')" class="flex items-center space-x-1.5 px-3.5 py-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 transition-colors text-xs font-medium">
+          <span>🔍</span>
+          <span>웹 검색 모드</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 토스트 알림 배너 -->
+    <div id="toast-banner" class="hidden bg-gray-900 text-white text-xs px-4 py-3 rounded-xl flex items-center justify-between shadow-lg">
+      <span id="toast-message">설정이 변경되었습니다.</span>
+      <button type="button" onclick="closeToast()" class="text-gray-400 hover:text-white ml-3 font-bold">✕</button>
+    </div>
+
+    <!-- 2. 8대 표준 카테고리 묶음 목록 (시각적으로 깔끔한 카드 상자 구조) -->
+    <div class="space-y-3.5">
+      
+      <!-- [카테고리 1: 영상] -->
+      <details open class="group bg-white rounded-xl border border-gray-200 overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+        <summary class="p-4 sm:p-4.5 flex items-center justify-between cursor-pointer hover:bg-gray-50/70 select-none transition-colors">
+          <div class="flex items-center space-x-3.5">
+            <span class="text-2xl">🎬</span>
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="text-sm font-bold text-gray-900">영상 만들기 및 편집</span>
+                <span class="active-badge text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200" data-cat-badge="video">0 / 4 켜짐</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">글이나 사진을 넣으면 자동으로 고화질 동영상을 만들어주는 플러그인</p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button type="button" onclick="turnOffCategory('video', event)" class="text-xs text-gray-500 hover:text-red-600 px-2.5 py-1.5 rounded-md hover:bg-red-50 border border-gray-200 hover:border-red-200 transition-colors">
+              모두 끄기
+            </button>
+            <div class="w-6 h-6 flex items-center justify-center text-gray-400 group-open:rotate-180 transition-transform duration-200">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+          </div>
+        </summary>
+        <div class="border-t border-gray-100 bg-[#FAFAFA] p-3 sm:p-4 space-y-2.5">
+          <!-- 런웨이 -->
+          <div class="flex items-center justify-between bg-white p-3.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+            <div>
+              <div class="flex items-center space-x-1.5">
+                <span class="text-sm font-semibold text-gray-900">런웨이 (Runway Gen-3)</span>
+                <span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-medium">실사 영화급</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">할리우드 영화 수준의 초고화질 실사 영상을 만듭니다.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+              <input type="checkbox" class="sr-only peer plugin-switch" data-id="runway" data-cat="video" onchange="updateCounts()">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+          <!-- 루마 -->
+          <div class="flex items-center justify-between bg-white p-3.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+            <div>
+              <div class="flex items-center space-x-1.5">
+                <span class="text-sm font-semibold text-gray-900">루마 드림머신 (Luma DreamMachine)</span>
+                <span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-medium">카메라 무빙</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">부드러운 카메라 앵글 회전과 시점 전환에 강합니다.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+              <input type="checkbox" class="sr-only peer plugin-switch" data-id="luma" data-cat="video" onchange="updateCounts()">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+          <!-- 클링 -->
+          <div class="flex items-center justify-between bg-white p-3.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+            <div>
+              <div class="flex items-center space-x-1.5">
+                <span class="text-sm font-semibold text-gray-900">클링 (Kling AI)</span>
+                <span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-medium">인물 동작</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">사람의 얼굴 표정, 걷기나 행동 표현이 가장 왜곡 없이 자연스럽습니다.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+              <input type="checkbox" class="sr-only peer plugin-switch" data-id="kling" data-cat="video" onchange="updateCounts()">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+          <!-- 피카 -->
+          <div class="flex items-center justify-between bg-white p-3.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+            <div>
+              <div class="flex items-center space-x-1.5">
+                <span class="text-sm font-semibold text-gray-900">피카 (Pika 2.0)</span>
+                <span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-medium">특수효과</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">물체가 녹거나 터지는 등의 재미있는 숏폼 특수효과를 만듭니다.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+              <input type="checkbox" class="sr-only peer plugin-switch" data-id="pika" data-cat="video" onchange="updateCounts()">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+        </div>
+      </details>
+
+      <!-- [카테고리 2: 그림 & 디자인] -->
+      <details open class="group bg-white rounded-xl border border-gray-200 overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+        <summary class="p-4 sm:p-4.5 flex items-center justify-between cursor-pointer hover:bg-gray-50/70 select-none transition-colors">
+          <div class="flex items-center space-x-3.5">
+            <span class="text-2xl">🎨</span>
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="text-sm font-bold text-gray-900">그림 및 디자인 그리기</span>
+                <span class="active-badge text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200" data-cat-badge="image">0 / 3 켜짐</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">상상하는 그림, 일러스트, 캐릭터, 로고를 만들어주는 플러그인</p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button type="button" onclick="turnOffCategory('image', event)" class="text-xs text-gray-500 hover:text-red-600 px-2.5 py-1.5 rounded-md hover:bg-red-50 border border-gray-200 hover:border-red-200 transition-colors">
+              모두 끄기
+            </button>
+            <div class="w-6 h-6 flex items-center justify-center text-gray-400 group-open:rotate-180 transition-transform duration-200">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+          </div>
+        </summary>
+        <div class="border-t border-gray-100 bg-[#FAFAFA] p-3 sm:p-4 space-y-2.5">
+          <!-- 미드저니 -->
+          <div class="flex items-center justify-between bg-white p-3.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+            <div>
+              <div class="flex items-center space-x-1.5">
+                <span class="text-sm font-semibold text-gray-900">미드저니 (Midjourney 연동)</span>
+                <span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-medium">최고 퀄리티</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">가장 뛰어난 예술적 퀄리티와 감성적인 일러스트를 생성합니다.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+              <input type="checkbox" class="sr-only peer plugin-switch" data-id="midjourney" data-cat="image" onchange="updateCounts()">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+          <!-- 플럭스 -->
+          <div class="flex items-center justify-between bg-white p-3.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+            <div>
+              <div class="flex items-center space-x-1.5">
+                <span class="text-sm font-semibold text-gray-900">플럭스 (FLUX.1)</span>
+                <span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-medium">글자 표기 최강</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">이미지 안에 글자(영문 텍스트)를 정확하게 새겨 넣는 데 최적화되어 있습니다.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+              <input type="checkbox" class="sr-only peer plugin-switch" data-id="flux" data-cat="image" onchange="updateCounts()">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+          <!-- 달리 3 -->
+          <div class="flex items-center justify-between bg-white p-3.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+            <div>
+              <div class="flex items-center space-x-1.5">
+                <span class="text-sm font-semibold text-gray-900">달리 3 (DALL-E 3)</span>
+                <span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-medium">프롬프트 정확도</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">복잡한 설명문도 찰떡같이 이해하고 디테일하게 그려냅니다.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+              <input type="checkbox" class="sr-only peer plugin-switch" data-id="dalle" data-cat="image" onchange="updateCounts()">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+        </div>
+      </details>
+
+      <!-- [카테고리 3: 목소리 & 음악] -->
+      <details open class="group bg-white rounded-xl border border-gray-200 overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+        <summary class="p-4 sm:p-4.5 flex items-center justify-between cursor-pointer hover:bg-gray-50/70 select-none transition-colors">
+          <div class="flex items-center space-x-3.5">
+            <span class="text-2xl">🎵</span>
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="text-sm font-bold text-gray-900">목소리 및 음악</span>
+                <span class="active-badge text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200" data-cat-badge="audio">0 / 3 켜짐</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">AI 성우 목소리 생성, 노래 작곡, 음성 녹음 텍스트 변환</p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button type="button" onclick="turnOffCategory('audio', event)" class="text-xs text-gray-500 hover:text-red-600 px-2.5 py-1.5 rounded-md hover:bg-red-50 border border-gray-200 hover:border-red-200 transition-colors">
+              모두 끄기
+            </button>
+            <div class="w-6 h-6 flex items-center justify-center text-gray-400 group-open:rotate-180 transition-transform duration-200">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+          </div>
+        </summary>
+        <div class="border-t border-gray-100 bg-[#FAFAFA] p-3 sm:p-4 space-y-2.5">
+          <!-- 일레븐랩스 -->
+          <div class="flex items-center justify-between bg-white p-3.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+            <div>
+              <div class="flex items-center space-x-1.5">
+                <span class="text-sm font-semibold text-gray-900">일레븐랩스 (ElevenLabs)</span>
+                <span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-medium">AI 성우</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">진짜 사람처럼 감정이 실린 자연스러운 목소리로 오디오를 녹음합니다.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+              <input type="checkbox" class="sr-only peer plugin-switch" data-id="elevenlabs" data-cat="audio" onchange="updateCounts()">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+          <!-- 수노 -->
+          <div class="flex items-center justify-between bg-white p-3.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+            <div>
+              <div class="flex items-center space-x-1.5">
+                <span class="text-sm font-semibold text-gray-900">수노 (Suno 음악 작곡)</span>
+                <span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-medium">작곡/BGM</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">가사와 장르를 입력하면 보컬이 포함된 완성형 노래를 작곡합니다.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+              <input type="checkbox" class="sr-only peer plugin-switch" data-id="suno" data-cat="audio" onchange="updateCounts()">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+          <!-- 위스퍼 -->
+          <div class="flex items-center justify-between bg-white p-3.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+            <div>
+              <div class="flex items-center space-x-1.5">
+                <span class="text-sm font-semibold text-gray-900">위스퍼 (Whisper 받아쓰기)</span>
+                <span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-medium">음성 회의록</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">녹음된 통화 파일이나 강의 오디오를 정확한 텍스트로 풀어냅니다.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+              <input type="checkbox" class="sr-only peer plugin-switch" data-id="whisper" data-cat="audio" onchange="updateCounts()">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+        </div>
+      </details>
+
+      <!-- [카테고리 4: 검색 & 최신 정보] -->
+      <details open class="group bg-white rounded-xl border border-gray-200 overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+        <summary class="p-4 sm:p-4.5 flex items-center justify-between cursor-pointer hover:bg-gray-50/70 select-none transition-colors">
+          <div class="flex items-center space-x-3.5">
+            <span class="text-2xl">🔍</span>
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="text-sm font-bold text-gray-900">인터넷 검색 및 최신 정보</span>
+                <span class="active-badge text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100" data-cat-badge="search">1 / 2 켜짐</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">오늘의 최신 뉴스, 실시간 주가, 네이버/구글 검색 결과를 가져옵니다.</p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button type="button" onclick="turnOffCategory('search', event)" class="text-xs text-gray-500 hover:text-red-600 px-2.5 py-1.5 rounded-md hover:bg-red-50 border border-gray-200 hover:border-red-200 transition-colors">
+              모두 끄기
+            </button>
+            <div class="w-6 h-6 flex items-center justify-center text-gray-400 group-open:rotate-180 transition-transform duration-200">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+          </div>
+        </summary>
+        <div class="border-t border-gray-100 bg-[#FAFAFA] p-3 sm:p-4 space-y-2.5">
+          <!-- 구글 검색 -->
+          <div class="flex items-center justify-between bg-white p-3.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+            <div>
+              <div class="flex items-center space-x-1.5">
+                <span class="text-sm font-semibold text-gray-900">구글 실시간 웹 검색</span>
+                <span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-medium">국내외 뉴스</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">오늘의 최신 뉴스, 실시간 주가, 블로그 글을 실시간으로 검색합니다.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+              <input type="checkbox" checked class="sr-only peer plugin-switch" data-id="google-search" data-cat="search" onchange="updateCounts()">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+          <!-- 퍼플렉시티 -->
+          <div class="flex items-center justify-between bg-white p-3.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+            <div>
+              <div class="flex items-center space-x-1.5">
+                <span class="text-sm font-semibold text-gray-900">퍼플렉시티 (Perplexity 리서치)</span>
+                <span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-medium">출처 포함 요약</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">신뢰할 수 있는 출처 링크와 함께 핵심 내용만 요약 검색합니다.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+              <input type="checkbox" class="sr-only peer plugin-switch" data-id="perplexity" data-cat="search" onchange="updateCounts()">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+        </div>
+      </details>
+
+      <!-- [카테고리 5: 문서·업무·이메일] -->
+      <details open class="group bg-white rounded-xl border border-gray-200 overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+        <summary class="p-4 sm:p-4.5 flex items-center justify-between cursor-pointer hover:bg-gray-50/70 select-none transition-colors">
+          <div class="flex items-center space-x-3.5">
+            <span class="text-2xl">📄</span>
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="text-sm font-bold text-gray-900">문서·업무·이메일</span>
+                <span class="active-badge text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200" data-cat-badge="office">0 / 3 켜짐</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">PDF 요약, 노션 메모 정리, 캘린더 일정 등록, 이메일 업무 비서</p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button type="button" onclick="turnOffCategory('office', event)" class="text-xs text-gray-500 hover:text-red-600 px-2.5 py-1.5 rounded-md hover:bg-red-50 border border-gray-200 hover:border-red-200 transition-colors">
+              모두 끄기
+            </button>
+            <div class="w-6 h-6 flex items-center justify-center text-gray-400 group-open:rotate-180 transition-transform duration-200">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+          </div>
+        </summary>
+        <div class="border-t border-gray-100 bg-[#FAFAFA] p-3 sm:p-4 space-y-2.5">
+          <!-- 스마트 PDF -->
+          <div class="flex items-center justify-between bg-white p-3.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+            <div>
+              <div class="flex items-center space-x-1.5">
+                <span class="text-sm font-semibold text-gray-900">스마트 PDF 분석기</span>
+                <span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-medium">문서 요약</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">긴 보고서나 계약서 PDF에서 핵심 내용을 찾아 요약합니다.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+              <input type="checkbox" class="sr-only peer plugin-switch" data-id="pdf-analyzer" data-cat="office" onchange="updateCounts()">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+          <!-- 노션 -->
+          <div class="flex items-center justify-between bg-white p-3.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+            <div>
+              <div class="flex items-center space-x-1.5">
+                <span class="text-sm font-semibold text-gray-900">노션 (Notion 작업 연동)</span>
+                <span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-medium">메모/페이지</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">대화 내용을 내 노션 페이지에 새 메모나 할 일 목록으로 저장합니다.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+              <input type="checkbox" class="sr-only peer plugin-switch" data-id="notion" data-cat="office" onchange="updateCounts()">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+          <!-- 구글 캘린더 -->
+          <div class="flex items-center justify-between bg-white p-3.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+            <div>
+              <div class="flex items-center space-x-1.5">
+                <span class="text-sm font-semibold text-gray-900">구글 캘린더 일정 관리</span>
+                <span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-medium">일정 등록</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">약속이나 일정을 말하면 내 구글 캘린더에 바로 등록합니다.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+              <input type="checkbox" class="sr-only peer plugin-switch" data-id="google-calendar" data-cat="office" onchange="updateCounts()">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+        </div>
+      </details>
+
+      <!-- [카테고리 6: 내 컴퓨터 파일 & 시스템 제어] -->
+      <details open class="group bg-white rounded-xl border border-gray-200 overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+        <summary class="p-4 sm:p-4.5 flex items-center justify-between cursor-pointer hover:bg-gray-50/70 select-none transition-colors">
+          <div class="flex items-center space-x-3.5">
+            <span class="text-2xl">💻</span>
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="text-sm font-bold text-gray-900">내 컴퓨터 파일 & 시스템 제어</span>
+                <span class="active-badge text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200" data-cat-badge="system">0 / 2 켜짐</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">내 컴퓨터의 폴더 파일을 읽고 쓰거나, 명령어를 대신 실행합니다.</p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button type="button" onclick="turnOffCategory('system', event)" class="text-xs text-gray-500 hover:text-red-600 px-2.5 py-1.5 rounded-md hover:bg-red-50 border border-gray-200 hover:border-red-200 transition-colors">
+              모두 끄기
+            </button>
+            <div class="w-6 h-6 flex items-center justify-center text-gray-400 group-open:rotate-180 transition-transform duration-200">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+          </div>
+        </summary>
+        <div class="border-t border-gray-100 bg-[#FAFAFA] p-3 sm:p-4 space-y-2.5">
+          <!-- 파일 탐색기 -->
+          <div class="flex items-center justify-between bg-white p-3.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+            <div>
+              <div class="flex items-center space-x-1.5">
+                <span class="text-sm font-semibold text-gray-900">컴퓨터 폴더 & 파일 탐색기</span>
+                <span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-medium">내 컴퓨터</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">내 컴퓨터의 특정 폴더 안에 있는 파일을 읽거나 새로 저장합니다.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+              <input type="checkbox" class="sr-only peer plugin-switch" data-id="filesystem" data-cat="system" onchange="updateCounts()">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+          <!-- 터미널 -->
+          <div class="flex items-center justify-between bg-white p-3.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+            <div>
+              <div class="flex items-center space-x-1.5">
+                <span class="text-sm font-semibold text-gray-900">터미널 명령어 실행기</span>
+                <span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-medium">명령어</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">복잡한 컴퓨터 설정 명령어나 프로그램을 대신 실행해 줍니다.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+              <input type="checkbox" class="sr-only peer plugin-switch" data-id="terminal" data-cat="system" onchange="updateCounts()">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+        </div>
+      </details>
+
+      <!-- [카테고리 7: 웹 브라우저 자동 조작] -->
+      <details open class="group bg-white rounded-xl border border-gray-200 overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+        <summary class="p-4 sm:p-4.5 flex items-center justify-between cursor-pointer hover:bg-gray-50/70 select-none transition-colors">
+          <div class="flex items-center space-x-3.5">
+            <span class="text-2xl">🌐</span>
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="text-sm font-bold text-gray-900">웹 브라우저 자동 조작</span>
+                <span class="active-badge text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200" data-cat-badge="browser">0 / 1 켜짐</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">AI가 직접 웹페이지를 열고 클릭하며 정보를 수집합니다.</p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button type="button" onclick="turnOffCategory('browser', event)" class="text-xs text-gray-500 hover:text-red-600 px-2.5 py-1.5 rounded-md hover:bg-red-50 border border-gray-200 hover:border-red-200 transition-colors">
+              모두 끄기
+            </button>
+            <div class="w-6 h-6 flex items-center justify-center text-gray-400 group-open:rotate-180 transition-transform duration-200">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+          </div>
+        </summary>
+        <div class="border-t border-gray-100 bg-[#FAFAFA] p-3 sm:p-4 space-y-2.5">
+          <!-- 퍼피티어 -->
+          <div class="flex items-center justify-between bg-white p-3.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+            <div>
+              <div class="flex items-center space-x-1.5">
+                <span class="text-sm font-semibold text-gray-900">웹 브라우저 자동 조작기</span>
+                <span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-medium">자동 클릭</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">AI가 직접 웹 브라우저를 열고 클릭하여 사이트 화면을 캡처하고 데이터를 긁어옵니다.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+              <input type="checkbox" class="sr-only peer plugin-switch" data-id="puppeteer" data-cat="browser" onchange="updateCounts()">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+        </div>
+      </details>
+
+      <!-- [카테고리 8: 통계 & 데이터 분석] -->
+      <details open class="group bg-white rounded-xl border border-gray-200 overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+        <summary class="p-4 sm:p-4.5 flex items-center justify-between cursor-pointer hover:bg-gray-50/70 select-none transition-colors">
+          <div class="flex items-center space-x-3.5">
+            <span class="text-2xl">📊</span>
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="text-sm font-bold text-gray-900">통계 & 데이터 분석</span>
+                <span class="active-badge text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200" data-cat-badge="data">0 / 1 켜짐</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">데이터 표를 분석하고 알기 쉬운 그래프와 차트로 시각화해 줍니다.</p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button type="button" onclick="turnOffCategory('data', event)" class="text-xs text-gray-500 hover:text-red-600 px-2.5 py-1.5 rounded-md hover:bg-red-50 border border-gray-200 hover:border-red-200 transition-colors">
+              모두 끄기
+            </button>
+            <div class="w-6 h-6 flex items-center justify-center text-gray-400 group-open:rotate-180 transition-transform duration-200">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+          </div>
+        </summary>
+        <div class="border-t border-gray-100 bg-[#FAFAFA] p-3 sm:p-4 space-y-2.5">
+          <!-- 차트 시각화 -->
+          <div class="flex items-center justify-between bg-white p-3.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+            <div>
+              <div class="flex items-center space-x-1.5">
+                <span class="text-sm font-semibold text-gray-900">데이터 차트 시각화 도구</span>
+                <span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-medium">예쁜 그래프</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">숫자 데이터나 엑셀 표를 보기 쉬운 막대/원형 차트 그림으로 만듭니다.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+              <input type="checkbox" class="sr-only peer plugin-switch" data-id="chart-visualizer" data-cat="data" onchange="updateCounts()">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+        </div>
+      </details>
+
+    </div>
+
+  </main>
+
+  <script>
+    // 카테고리별 모두 끄기
+    function turnOffCategory(catId, event) {
+      if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+      }
+      const switches = document.querySelectorAll(`input[data-cat="${catId}"]`);
+      switches.forEach(sw => sw.checked = false);
+      updateCounts();
+      showToast("해당 카테고리의 모든 플러그인을 껐습니다.");
+    }
+
+    // 프리셋 모드 전환
+    function setPreset(mode) {
+      const allSwitches = document.querySelectorAll('.plugin-switch');
+      allSwitches.forEach(sw => sw.checked = false);
+
+      if (mode === 'none') {
+        showToast("모든 플러그인이 꺼졌습니다. (순수 일반 대화 모드)");
+      } else if (mode === 'video') {
+        const rw = document.querySelector('input[data-id="runway"]');
+        if (rw) rw.checked = true;
+        showToast("🎬 영상 모드: 런웨이(Runway)를 켰습니다.");
+      } else if (mode === 'image') {
+        const mj = document.querySelector('input[data-id="midjourney"]');
+        if (mj) mj.checked = true;
+        showToast("🎨 그림 모드: 미드저니를 켰습니다.");
+      } else if (mode === 'audio') {
+        const el = document.querySelector('input[data-id="elevenlabs"]');
+        if (el) el.checked = true;
+        showToast("🎵 음성 모드: 일레븐랩스를 켰습니다.");
+      } else if (mode === 'search') {
+        const gs = document.querySelector('input[data-id="google-search"]');
+        if (gs) gs.checked = true;
+        showToast("🔍 검색 모드: 구글 실시간 검색을 켰습니다.");
+      }
+
+      updateCounts();
+    }
+
+    // 숫자 및 배지 갱신
+    function updateCounts() {
+      let total = 0;
+      const cats = ['video', 'image', 'audio', 'search', 'office', 'system', 'browser', 'data'];
+
+      cats.forEach(c => {
+        const switches = document.querySelectorAll(`input[data-cat="${c}"]`);
+        const active = Array.from(switches).filter(s => s.checked).length;
+        total += active;
+
+        const badge = document.querySelector(`[data-cat-badge="${c}"]`);
+        if (badge) {
+          badge.textContent = `${active} / ${switches.length} 켜짐`;
+          if (active > 0) {
+            badge.className = "active-badge text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100";
+          } else {
+            badge.className = "active-badge text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200";
+          }
+        }
+      });
+
+      const totalEl = document.getElementById('header-active-count');
+      if (totalEl) totalEl.textContent = total;
+    }
+
+    // 토스트 알림
+    let toastTimer;
+    function showToast(msg) {
+      const banner = document.getElementById('toast-banner');
+      const text = document.getElementById('toast-message');
+      text.textContent = msg;
+      banner.classList.remove('hidden');
+
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        banner.classList.add('hidden');
+      }, 3000);
+    }
+    function closeToast() {
+      document.getElementById('toast-banner').classList.add('hidden');
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      updateCounts();
+    });
+  </script>
+</body>
+</html>
