@@ -13,6 +13,17 @@ import subprocess
 import platform
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 import urllib.parse
+import webbrowser
+
+# 윈도우 콘솔 한글 및 이모지(CP949) 인코딩 충돌 방지
+if sys.platform == "win32":
+    try:
+        if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        if sys.stderr and hasattr(sys.stderr, "reconfigure"):
+            sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.path.join(BASE_DIR, "config.json")
@@ -370,24 +381,28 @@ def launch_desktop_widget(url):
         subprocess.Popen(["open", "-a", "Google Chrome", "--args", f"--app={url}"])
 
     elif system == "Windows":
-        profile_dir = os.path.join(tempfile.gettempdir(), "switchboard_widget_profile")
-        app_args = [
-            f"--app={url}",
-            f"--user-data-dir={profile_dir}",
-            "--window-size=420,740",
-            "--window-position=120,80"
-        ]
+        app_args = [f"--app={url}"]
         chrome_paths = [
+            # Chrome (ProgramFiles, x86, LocalAppData)
             os.path.expandvars(r"%ProgramFiles%\Google\Chrome\Application\chrome.exe"),
             os.path.expandvars(r"%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"),
+            os.path.expandvars(r"%LocalAppData%\Google\Chrome\Application\chrome.exe"),
+            # Microsoft Edge (Windows 10/11 전 기종 기본 내장)
             os.path.expandvars(r"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"),
-            os.path.expandvars(r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe")
+            os.path.expandvars(r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"),
+            os.path.expandvars(r"%LocalAppData%\Microsoft\Edge\Application\msedge.exe"),
+            # Brave
+            os.path.expandvars(r"%ProgramFiles%\BraveSoftware\Brave-Browser\Application\brave.exe"),
+            os.path.expandvars(r"%LocalAppData%\BraveSoftware\Brave-Browser\Application\brave.exe")
         ]
         for p in chrome_paths:
             if os.path.exists(p):
-                subprocess.Popen([p] + app_args)
-                return
-        os.system(f"start {url}")
+                try:
+                    subprocess.Popen([p] + app_args)
+                    return
+                except Exception:
+                    pass
+        webbrowser.open(url)
     else:
         subprocess.Popen(["xdg-open", url])
 
