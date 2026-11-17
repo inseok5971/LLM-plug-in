@@ -179,8 +179,8 @@ def launch_desktop_widget(url):
     app_args = [
         f"--app={url}",
         f"--user-data-dir={profile_dir}",
-        "--window-size=390,700",
-        "--window-position=100,100"
+        "--window-size=420,740",
+        "--window-position=120,80"
     ]
 
     if system == "Darwin": # macOS

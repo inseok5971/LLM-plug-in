@@ -5,26 +5,34 @@
   <title>AI 플러그인 스위치보드</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
+    html, body {
       width: 100%;
-      height: 100vh;
+      height: 100%;
       font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Segoe UI", Roboto, sans-serif;
       background-color: #F8F9FA;
       color: #191F28;
+      overflow-x: hidden;
+    }
+    body {
       display: flex;
       flex-direction: column;
       user-select: none;
     }
+    
+    /* 상단 고정 헤더 */
     header {
       background: #FFFFFF;
       border-bottom: 1px solid #E5E7EB;
-      padding: 14px 16px;
+      padding: 12px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
     }
-    .header-title { font-size: 14px; font-weight: 700; color: #111827; display: flex; align-items: center; gap: 6px; }
+    .header-title { font-size: 14px; font-weight: 700; color: #111827; }
     .header-sub { font-size: 11px; color: #6B7280; margin-top: 2px; }
     .badge-count {
       font-size: 11px;
@@ -40,16 +48,34 @@
     }
     .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: #10B981; }
 
-    /* 빠른 모드 바 */
+    /* 프리셋 바 */
     .presets-box {
       background: #FFFFFF;
       margin: 10px 14px 6px;
       padding: 10px 12px;
       border-radius: 10px;
       border: 1px solid #E5E7EB;
-      flex-shrink: 0;
+      position: sticky;
+      top: 57px;
+      z-index: 40;
     }
-    .preset-title { font-size: 11px; font-weight: 700; color: #6B7280; margin-bottom: 6px; display: flex; justify-content: space-between; }
+    .preset-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .preset-title { font-size: 11px; font-weight: 700; color: #6B7280; }
+    .btn-toggle-all {
+      font-size: 10px;
+      color: #2563EB;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-toggle-all:hover { text-decoration: underline; }
+
     .preset-chips { display: flex; flex-wrap: wrap; gap: 5px; }
     .chip {
       font-size: 11px;
@@ -66,7 +92,7 @@
     .chip-off { background: #FEE2E2; color: #DC2626; border-color: #FECACA; font-weight: 700; }
     .chip-off:hover { background: #FCA5A5; color: #B91C1C; }
 
-    /* 알림 토스트 */
+    /* 토스트 알림 */
     .toast {
       display: none;
       background: #111827;
@@ -77,33 +103,32 @@
       border-radius: 6px;
       justify-content: space-between;
       align-items: center;
-      flex-shrink: 0;
     }
 
-    /* 본문 스크롤 영역 */
+    /* 본문 스크롤 영역 (확실하고 시원하게 끝까지 스크롤) */
     main {
       flex: 1;
       overflow-y: scroll;
-      padding: 4px 14px 24px;
+      padding: 6px 14px 40px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
     }
 
-    /* 눈에 잘 보이는 세련된 커스텀 스크롤바 */
+    /* 상시 표시되는 명확한 스크롤바 */
     main::-webkit-scrollbar {
-      width: 7px;
+      width: 8px;
     }
     main::-webkit-scrollbar-track {
-      background: #F1F3F5;
+      background: #E9ECEF;
       border-radius: 4px;
     }
     main::-webkit-scrollbar-thumb {
-      background: #CED4DA;
+      background: #ADB5BD;
       border-radius: 4px;
     }
     main::-webkit-scrollbar-thumb:hover {
-      background: #ADB5BD;
+      background: #6C757D;
     }
 
     /* 카테고리 카드 */
@@ -111,68 +136,83 @@
       background: #FFFFFF;
       border-radius: 10px;
       border: 1px solid #E5E7EB;
-      overflow: hidden;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+      overflow: visible;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
     }
     details summary::-webkit-details-marker { display: none; }
     details summary { list-style: none; outline: none; }
+    
     .cat-summary {
-      padding: 10px 12px;
+      padding: 12px 14px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: space-between;
       background: #FFFFFF;
+      border-radius: 10px;
       transition: background 0.15s;
     }
     .cat-summary:hover { background: #F9FAFB; }
+    
     .cat-left { display: flex; align-items: center; gap: 8px; }
-    .cat-icon { font-size: 16px; }
-    .cat-name { font-size: 12px; font-weight: 700; color: #111827; display: flex; align-items: center; gap: 6px; }
-    .cat-badge { font-size: 9px; font-weight: 600; padding: 1px 5px; border-radius: 4px; }
+    .cat-icon { font-size: 18px; }
+    .cat-name { font-size: 13px; font-weight: 700; color: #111827; display: flex; align-items: center; gap: 6px; }
+    .cat-badge { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; }
     .cat-badge-active { background: #EFF6FF; color: #2563EB; border: 1px solid #DBEAFE; }
     .cat-badge-none { background: #F3F4F6; color: #6B7280; border: 1px solid #E5E7EB; }
+    
+    .cat-right { display: flex; align-items: center; gap: 6px; }
     .btn-off-cat {
       font-size: 10px;
       color: #6B7280;
       background: #FFFFFF;
       border: 1px solid #D1D5DB;
-      padding: 2px 6px;
+      padding: 3px 7px;
       border-radius: 4px;
       cursor: pointer;
     }
     .btn-off-cat:hover { color: #DC2626; border-color: #FECACA; background: #FEF2F2; }
+    .arrow-icon {
+      font-size: 10px;
+      color: #9CA3AF;
+      transition: transform 0.2s ease;
+      display: inline-block;
+    }
+    details[open] .arrow-icon {
+      transform: rotate(180deg);
+    }
 
-    /* 세부 플러그인 리스트 */
+    /* 세부 플러그인 목록 */
     .plugin-list {
       background: #FAFAFA;
       border-top: 1px solid #F3F4F6;
-      padding: 8px 10px;
+      padding: 10px 12px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
     }
     .plugin-item {
       background: #FFFFFF;
       border: 1px solid #E5E7EB;
-      border-radius: 6px;
-      padding: 8px 10px;
+      border-radius: 8px;
+      padding: 10px 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
     }
-    .plugin-info { padding-right: 6px; }
-    .plugin-header { display: flex; align-items: center; gap: 4px; }
-    .plugin-name { font-size: 11px; font-weight: 700; color: #111827; }
-    .plugin-tag { font-size: 9px; color: #4B5563; background: #F3F4F6; padding: 1px 4px; border-radius: 3px; font-weight: 500; }
-    .plugin-desc { font-size: 10px; color: #6B7280; margin-top: 2px; line-height: 1.25; }
+    .plugin-info { padding-right: 8px; flex: 1; }
+    .plugin-header { display: flex; align-items: center; gap: 6px; }
+    .plugin-name { font-size: 12px; font-weight: 700; color: #111827; }
+    .plugin-tag { font-size: 9px; color: #4B5563; background: #F3F4F6; padding: 1px 5px; border-radius: 3px; font-weight: 500; }
+    .plugin-desc { font-size: 10.5px; color: #6B7280; margin-top: 2px; line-height: 1.3; }
 
     /* 스위치 */
     .switch {
       position: relative;
       display: inline-block;
-      width: 36px;
-      height: 20px;
+      width: 38px;
+      height: 22px;
       flex-shrink: 0;
     }
     .switch input { opacity: 0; width: 0; height: 0; }
@@ -182,19 +222,19 @@
       top: 0; left: 0; right: 0; bottom: 0;
       background-color: #E5E7EB;
       transition: .2s;
-      border-radius: 20px;
+      border-radius: 22px;
     }
     .slider:before {
       position: absolute;
       content: "";
-      height: 16px;
-      width: 16px;
+      height: 18px;
+      width: 18px;
       left: 2px;
       bottom: 2px;
       background-color: white;
       transition: .2s;
       border-radius: 50%;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
     input:checked + .slider { background-color: #2563EB; }
     input:checked + .slider:before { transform: translateX(16px); }
@@ -203,21 +243,24 @@
     footer {
       background: #FFFFFF;
       border-top: 1px solid #E5E7EB;
-      padding: 8px 14px;
-      font-size: 10px;
+      padding: 10px 16px;
+      font-size: 11px;
       color: #6B7280;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      flex-shrink: 0;
+      position: sticky;
+      bottom: 0;
+      z-index: 50;
+      box-shadow: 0 -1px 3px rgba(0,0,0,0.03);
     }
     .btn-sync {
       background: #111827;
       color: #FFFFFF;
       border: none;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 10px;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 11px;
       font-weight: 600;
       cursor: pointer;
     }
@@ -226,6 +269,7 @@
 </head>
 <body>
 
+  <!-- 헤더 -->
   <header>
     <div>
       <div class="header-title">⚡ AI 플러그인 스위치보드</div>
@@ -233,15 +277,15 @@
     </div>
     <div class="badge-count">
       <span class="badge-dot"></span>
-      <span>활성: <b id="header-active-count">1</b>개</span>
+      <span>활성: <b id="header-active-count">0</b>개</span>
     </div>
   </header>
 
-  <!-- 빠른 모드 전환 -->
+  <!-- 원클릭 모드 바 -->
   <div class="presets-box">
-    <div class="preset-title">
-      <span>원클릭 작업 모드</span>
-      <span style="font-weight: normal; color: #9CA3AF;">클릭 시 즉시 적용</span>
+    <div class="preset-header">
+      <span class="preset-title">원클릭 작업 모드</span>
+      <button class="btn-toggle-all" id="btn-toggle-all" onclick="toggleAllAccordions()">▼ 전체 접기</button>
     </div>
     <div class="preset-chips">
       <button class="chip chip-off" onclick="setPreset('none')">✕ 전체 끄기</button>
@@ -256,16 +300,18 @@
     <span id="toast-text">설정이 변경되었습니다.</span>
   </div>
 
-  <!-- 8대 카테고리 -->
+  <!-- 8대 카테고리 및 세부 플러그인 전체 목록 -->
   <main id="categories-root"></main>
 
+  <!-- 푸터 -->
   <footer>
-    <span>💡 변경사항은 모든 AI 앱에 실시간 반영됩니다.</span>
+    <span>💡 변경 시 모든 AI 앱에 실시간 적용</span>
     <button class="btn-sync" onclick="autoSetup()">앱 자동 연동</button>
   </footer>
 
   <script>
     let appData = { categories: [], plugins: [] };
+    let allExpanded = true;
 
     async function loadData() {
       try {
@@ -279,6 +325,7 @@
       }
     }
 
+    // 100% 모든 카테고리와 세부 플러그인을 기본 오픈 상태로 렌더링
     function render() {
       const root = document.getElementById("categories-root");
       root.innerHTML = "";
@@ -291,7 +338,7 @@
         card.className = "category-card";
 
         const details = document.createElement("details");
-        details.open = true;
+        details.open = allExpanded; // 기본적으로 전체 시원하게 펼쳐둠!
 
         details.innerHTML = `
           <summary class="cat-summary">
@@ -304,7 +351,10 @@
                 </span>
               </div>
             </div>
-            <button class="btn-off-cat" onclick="turnOffCategory('${cat.id}', event)">모두 끄기</button>
+            <div class="cat-right">
+              <button class="btn-off-cat" onclick="turnOffCategory('${cat.id}', event)">모두 끄기</button>
+              <span class="arrow-icon">▼</span>
+            </div>
           </summary>
           <div class="plugin-list">
             ${catPlugins.map(p => `
@@ -330,6 +380,15 @@
       });
 
       updateHeaderCount();
+    }
+
+    // 전체 펼치기 / 전체 접기 토글
+    function toggleAllAccordions() {
+      allExpanded = !allExpanded;
+      const btn = document.getElementById("btn-toggle-all");
+      btn.textContent = allExpanded ? "▼ 전체 접기" : "▶ 전체 펼치기";
+      const detailsList = document.querySelectorAll("#categories-root details");
+      detailsList.forEach(d => d.open = allExpanded);
     }
 
     async function togglePlugin(id, enabled) {
