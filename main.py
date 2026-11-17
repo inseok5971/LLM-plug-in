@@ -7,6 +7,7 @@
 import sys
 import os
 import json
+import tempfile
 import threading
 import subprocess
 import platform
@@ -171,10 +172,16 @@ def setup_all_apps():
         return f"성공! {', '.join(configured_apps)}에 스위치보드가 자동 등록되었습니다. 앱을 재시작하면 바로 적용됩니다."
     return "설정 파일 자동 등록 완료!"
 
-# 데스크톱 미니 앱 창 실행 (주소창 없는 컴팩트 위젯 모드)
+# 데스크톱 미니 앱 창 실행 (주소창/탭 없는 순수 독립 위젯 모드)
 def launch_desktop_widget(url):
     system = platform.system()
-    app_args = [f"--app={url}", "--window-size=380,620", "--window-position=100,100"]
+    profile_dir = os.path.join(tempfile.gettempdir(), "switchboard_widget_profile")
+    app_args = [
+        f"--app={url}",
+        f"--user-data-dir={profile_dir}",
+        "--window-size=380,640",
+        "--window-position=100,100"
+    ]
 
     if system == "Darwin": # macOS
         chrome_paths = [
@@ -186,7 +193,7 @@ def launch_desktop_widget(url):
             if os.path.exists(p):
                 subprocess.Popen([p] + app_args)
                 return
-        subprocess.Popen(["open", url])
+        subprocess.Popen(["open", "-na", "Google Chrome", "--args"] + app_args)
 
     elif system == "Windows":
         chrome_paths = [
