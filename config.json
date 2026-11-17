@@ -82,9 +82,9 @@
       "cat": "video",
       "tag": "인물 동작",
       "desc": "사람 표정과 걷기 등 자연스러운 신체 묘사",
-      "enabled": true,
+      "enabled": false,
       "enabled_apps": {
-        "claude": true,
+        "claude": false,
         "cursor": false,
         "antigravity": true
       }
@@ -173,7 +173,7 @@
       "cat": "audio",
       "tag": "회의록",
       "desc": "녹음 파일을 정확한 텍스트로 변환",
-      "enabled": true,
+      "enabled": false,
       "enabled_apps": {
         "claude": false,
         "cursor": false,
