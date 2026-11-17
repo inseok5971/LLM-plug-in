@@ -876,6 +876,7 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
+      try { window.resizeTo(420, 740); } catch(e) {}
       loadData();
     });
   </script>

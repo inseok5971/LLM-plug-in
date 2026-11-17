@@ -354,15 +354,10 @@ def setup_all_apps():
 # 데스크톱 미니 앱 창 실행 (주소창/탭 없는 순수 독립 위젯 모드)
 def launch_desktop_widget(url):
     system = platform.system()
-    profile_dir = os.path.join(tempfile.gettempdir(), "switchboard_widget_profile")
-    app_args = [
-        f"--app={url}",
-        f"--user-data-dir={profile_dir}",
-        "--window-size=420,740",
-        "--window-position=120,80"
-    ]
 
     if system == "Darwin": # macOS
+        # macOS에서 --user-data-dir를 쓰면 독(Dock)에 크롬캐스트 아이콘이 뜨고 클릭 시 새 창이 열리는 크롬 버그가 발생함
+        # 따라서 기존 브라우저 세션에 연결하여 순수 독립 --app 창으로만 깔끔하게 실행
         chrome_paths = [
             "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
             "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
@@ -370,11 +365,18 @@ def launch_desktop_widget(url):
         ]
         for p in chrome_paths:
             if os.path.exists(p):
-                subprocess.Popen([p] + app_args)
+                subprocess.Popen([p, f"--app={url}"])
                 return
-        subprocess.Popen(["open", "-na", "Google Chrome", "--args"] + app_args)
+        subprocess.Popen(["open", "-a", "Google Chrome", "--args", f"--app={url}"])
 
     elif system == "Windows":
+        profile_dir = os.path.join(tempfile.gettempdir(), "switchboard_widget_profile")
+        app_args = [
+            f"--app={url}",
+            f"--user-data-dir={profile_dir}",
+            "--window-size=420,740",
+            "--window-position=120,80"
+        ]
         chrome_paths = [
             os.path.expandvars(r"%ProgramFiles%\Google\Chrome\Application\chrome.exe"),
             os.path.expandvars(r"%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"),
