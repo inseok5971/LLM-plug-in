@@ -453,15 +453,15 @@
     <span style="font-size: 10px; color: #059669; font-weight: 600;">🟢 실시간 동기화</span>
   </div>
 
-  <!-- 스마트 자동 감지 및 샘플 정리 툴바 -->
+  <!-- 스마트 자동 감지 및 도구 추가 툴바 -->
   <div style="background: #FFFFFF; margin: 10px 14px 4px; padding: 10px 14px; border-radius: 10px; border: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
     <div>
       <div style="font-size: 12px; font-weight: 700; color: #111827;">내 컴퓨터 플러그인 연동</div>
       <div style="font-size: 10.5px; color: #6B7280; margin-top: 1px;">실제 설치된 MCP 도구 자동 감지</div>
     </div>
     <div style="display: flex; gap: 6px;">
-      <button id="btn-clear-samples" onclick="clearSamples()" style="background: #F3F4F6; color: #4B5563; border: 1px solid #D1D5DB; padding: 5px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: background 0.15s;" title="샘플 도구를 숨기고 내 실제 도구만 표시">
-        🧹 샘플 제거
+      <button onclick="openAddModal()" style="background: #F3F4F6; color: #374151; border: 1px solid #D1D5DB; padding: 5px 9px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;">
+        ➕ 직접 추가
       </button>
       <button id="btn-scan" onclick="scanPlugins()" style="background: #2563EB; color: #FFFFFF; border: none; padding: 5px 11px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: background 0.15s;">
         <span id="scan-spinner">🔄</span>
@@ -497,6 +497,42 @@
     <span>💡 변경 시 모든 AI 앱에 실시간 적용</span>
     <button class="btn-sync" onclick="autoSetup()">앱 자동 연동</button>
   </footer>
+
+  <!-- 플러그인 직접 추가 모달 -->
+  <div id="add-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 360px;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>➕ 새 플러그인 등록</span>
+        </div>
+        <button class="modal-close" onclick="closeAddModal()">✕</button>
+      </div>
+      <div class="modal-body" style="padding: 16px 20px;">
+        <div style="margin-bottom: 12px;">
+          <label style="display: block; font-size: 11.5px; font-weight: 700; color: #374151; margin-bottom: 4px;">플러그인 이름</label>
+          <input type="text" id="new-plugin-name" placeholder="예: GitHub, Fetch, 내 파일 탐색기" style="width: 100%; padding: 8px 10px; font-size: 12px; border: 1px solid #D1D5DB; border-radius: 6px; outline: none;">
+        </div>
+        <div style="margin-bottom: 12px;">
+          <label style="display: block; font-size: 11.5px; font-weight: 700; color: #374151; margin-bottom: 4px;">카테고리</label>
+          <select id="new-plugin-cat" style="width: 100%; padding: 8px 10px; font-size: 12px; border: 1px solid #D1D5DB; border-radius: 6px; outline: none; background: #fff;">
+            <option value="video">🎬 영상 만들기 및 편집</option>
+            <option value="image">🎨 그림 및 디자인 그리기</option>
+            <option value="audio">🎵 목소리 및 음악</option>
+            <option value="search">🔍 인터넷 검색 및 최신 정보</option>
+            <option value="office">📄 문서·업무·이메일</option>
+            <option value="system" selected>💻 내 컴퓨터 파일 & 시스템 제어</option>
+            <option value="browser">🌐 웹 브라우저 자동 조작</option>
+            <option value="data">📊 통계 & 데이터 분석</option>
+          </select>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 11.5px; font-weight: 700; color: #374151; margin-bottom: 4px;">간단 설명</label>
+          <input type="text" id="new-plugin-desc" placeholder="예: 저장소 조회 및 이슈 관리" style="width: 100%; padding: 8px 10px; font-size: 12px; border: 1px solid #D1D5DB; border-radius: 6px; outline: none;">
+        </div>
+        <button onclick="submitAddPlugin()" style="width: 100%; background: #2563EB; color: #fff; border: none; padding: 10px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer;">등록하기</button>
+      </div>
+    </div>
+  </div>
 
   <!-- 상세 스캔 리포트 모달 다이얼로그 -->
   <div id="scan-modal" class="modal-overlay">
@@ -601,14 +637,14 @@
 
       if (!appData.plugins || appData.plugins.length === 0) {
         root.innerHTML = `
-          <div style="text-align: center; padding: 42px 20px; background: #FFFFFF; margin: 14px; border-radius: 12px; border: 1px dashed #D1D5DB;">
+          <div style="text-align: center; padding: 48px 20px; background: #FFFFFF; margin: 14px; border-radius: 12px; border: 1px dashed #D1D5DB;">
             <div style="font-size: 34px; margin-bottom: 8px;">🔌</div>
             <div style="font-size: 14px; font-weight: 700; color: #1F2937; margin-bottom: 6px;">등록된 플러그인이 없습니다</div>
-            <div style="font-size: 11.5px; color: #6B7280; line-height: 1.5; margin-bottom: 16px;">
-              컴퓨터의 Claude Desktop 등에 설치된 도구가 있다면 상단 <b>[🔄 가져오기]</b>를 누르시거나,<br>아래 버튼을 눌러 추천 샘플 도구들을 불러와 보세요!
+            <div style="font-size: 11.5px; color: #6B7280; line-height: 1.6; margin-bottom: 16px;">
+              컴퓨터의 Claude Desktop 등에 실제 설치된 MCP 도구가 있다면 상단 <b>[🔄 가져오기]</b>를 누르시거나,<br>아래 버튼을 눌러 스위치보드에 도구를 직접 등록해 보세요!
             </div>
-            <button onclick="restoreSamples()" style="background: #2563EB; color: #FFFFFF; border: none; font-size: 12px; font-weight: 600; padding: 8px 16px; border-radius: 8px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-              🎁 추천 샘플 도구(19종) 불러오기
+            <button onclick="openAddModal()" style="background: #2563EB; color: #FFFFFF; border: none; font-size: 12px; font-weight: 600; padding: 8px 16px; border-radius: 8px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+              ➕ 플러그인 직접 등록하기
             </button>
           </div>
         `;
@@ -648,25 +684,22 @@
           <div class="plugin-list">
             ${catPlugins.map(p => {
               const isChecked = isPluginEnabledForCurrentApp(p);
-              const tagHtml = p.is_real 
-                ? `<span class="plugin-tag" style="background:#D1FAE5; color:#065F46; font-weight:700;">🟢 실제 연동</span>`
-                : (p.is_sample 
-                    ? `<span class="plugin-tag" style="background:#F3F4F6; color:#6B7280;">샘플</span>`
-                    : `<span class="plugin-tag">${p.tag}</span>`);
-
               return `
                 <div class="plugin-item">
                   <div class="plugin-info">
                     <div class="plugin-header">
                       <span class="plugin-name">${p.name}</span>
-                      ${tagHtml}
+                      <span class="plugin-tag">${p.tag}</span>
                     </div>
                     <div class="plugin-desc">${p.desc}</div>
                   </div>
-                  <label class="switch">
-                    <input type="checkbox" ${isChecked ? "checked" : ""} onchange="togglePlugin('${p.id}', this.checked)">
-                    <span class="slider"></span>
-                  </label>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <label class="switch">
+                      <input type="checkbox" ${isChecked ? "checked" : ""} onchange="togglePlugin('${p.id}', this.checked)">
+                      <span class="slider"></span>
+                    </label>
+                    <button onclick="deletePlugin('${p.id}', '${p.name}')" style="background: none; border: none; color: #9CA3AF; cursor: pointer; font-size: 13px; padding: 2px;" title="플러그인 삭제">✕</button>
+                  </div>
                 </div>
               `;
             }).join("")}
@@ -826,26 +859,56 @@
       });
     }
 
-    async function clearSamples() {
-      if (!confirm("19종 샘플 도구를 정리하고, 내 컴퓨터에 실제로 설치된 플러그인만 남기시겠습니까?")) return;
+    async function deletePlugin(id, name) {
+      if (!confirm(`'${name}' 플러그인을 스위치보드에서 삭제하시겠습니까?`)) return;
       try {
-        const res = await fetch('/api/clear-samples', { method: 'POST' });
-        const json = await res.json();
-        showToast("샘플 도구를 정리했습니다.");
+        await fetch('/api/delete-plugin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        showToast(`'${name}' 플러그인이 삭제되었습니다.`);
         await loadData();
       } catch (e) {
-        showToast("정리 실패");
+        showToast("삭제 실패");
       }
     }
 
-    async function restoreSamples() {
+    function openAddModal() {
+      document.getElementById("add-modal").style.display = "flex";
+      document.getElementById("new-plugin-name").focus();
+    }
+
+    function closeAddModal() {
+      document.getElementById("add-modal").style.display = "none";
+    }
+
+    async function submitAddPlugin() {
+      const name = document.getElementById("new-plugin-name").value.trim();
+      const cat = document.getElementById("new-plugin-cat").value;
+      const desc = document.getElementById("new-plugin-desc").value.trim() || "직접 등록한 플러그인";
+      if (!name) {
+        alert("플러그인 이름을 입력하세요.");
+        return;
+      }
       try {
-        const res = await fetch('/api/restore-samples', { method: 'POST' });
+        const res = await fetch('/api/add-plugin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, cat, desc })
+        });
         const json = await res.json();
-        showToast("19종 샘플 플러그인을 불러왔습니다.");
-        await loadData();
+        if (json.success) {
+          closeAddModal();
+          document.getElementById("new-plugin-name").value = "";
+          document.getElementById("new-plugin-desc").value = "";
+          showToast(`'${name}' 플러그인이 추가되었습니다!`);
+          await loadData();
+        } else {
+          alert(json.message);
+        }
       } catch (e) {
-        showToast("복원 실패");
+        alert("추가 중 오류 발생");
       }
     }
 

@@ -93,16 +93,6 @@ def detect_installed_apps():
 
     return detected
 
-def get_sample_plugins():
-    samples_file = os.path.join(BASE_DIR, "samples.json")
-    if os.path.exists(samples_file):
-        try:
-            with open(samples_file, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return []
-
 # HTTP 요청 핸들러 (위젯 UI와 통신)
 class WidgetHandler(SimpleHTTPRequestHandler):
     def end_headers(self):
@@ -211,25 +201,35 @@ class WidgetHandler(SimpleHTTPRequestHandler):
             self._send_json(result)
             return
 
-        elif parsed.path == "/api/clear-samples":
-            # 샘플 플러그인(is_sample=True) 모두 제거 -> 사용자의 실제 연동 플러그인만 남김
-            data["plugins"] = [p for p in data.get("plugins", []) if not p.get("is_sample")]
-            save_config(data)
-            self._send_json({"success": True, "count": len(data["plugins"])})
+        elif parsed.path == "/api/add-plugin":
+            name = req.get("name", "").strip()
+            cat = req.get("cat", "system")
+            desc = req.get("desc", "직접 등록한 플러그인입니다.").strip()
+            if name:
+                clean_id = name.lower().replace(" ", "-")
+                existing_ids = {p["id"] for p in data.get("plugins", [])}
+                if clean_id not in existing_ids:
+                    new_item = {
+                        "id": clean_id,
+                        "name": name,
+                        "cat": cat,
+                        "tag": "직접 추가",
+                        "desc": desc,
+                        "enabled": True,
+                        "enabled_apps": { "claude": True, "cursor": True, "antigravity": True }
+                    }
+                    data.setdefault("plugins", []).append(new_item)
+                    save_config(data)
+                    self._send_json({"success": True, "plugin": new_item})
+                    return
+            self._send_json({"success": False, "message": "이미 등록되었거나 잘못된 이름입니다."})
             return
 
-        elif parsed.path == "/api/restore-samples":
-            # 19개 샘플 플러그인 템플릿 복구
-            current_ids = {p["id"] for p in data.get("plugins", [])}
-            samples = get_sample_plugins()
-            added = 0
-            for sp in samples:
-                if sp["id"] not in current_ids:
-                    data.setdefault("plugins", []).append(sp)
-                    current_ids.add(sp["id"])
-                    added += 1
+        elif parsed.path == "/api/delete-plugin":
+            p_id = req.get("id")
+            data["plugins"] = [p for p in data.get("plugins", []) if p["id"] != p_id]
             save_config(data)
-            self._send_json({"success": True, "added": added})
+            self._send_json({"success": True})
             return
 
         self.send_error(404)
