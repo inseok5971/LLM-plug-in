@@ -22,12 +22,12 @@
 📁 LLM-plug-in (다운로드 받은 폴더)
  ├── 🍎 맥(macOS) 전용 파일
  │    ├── start_mac.command             # 맥용 더블클릭 실행기
- │    ├── 바탕화면_바로가기_생성_맥.command   # 맥 바탕화면에 앱 아이콘 자동 생성
+ │    ├── create_shortcut_mac.command   # 맥 바탕화면에 앱 아이콘 자동 생성
  │    └── stop_mac.command              # 맥용 더블클릭 종료기
  │
  ├── 🪟 윈도우(Windows) 전용 파일
- │    ├── start_windows.bat             # 윈도우용 더블클릭 실행기
- │    ├── 바탕화면_바로가기_생성_윈도우.bat  # 윈도우 바탕화면에 바로가기 아이콘 자동 생성
+ │    ├── start_windows.bat             # 윈도우용 더블클릭 실행기 (Pure ASCII 100% 호환)
+ │    ├── create_shortcut_windows.bat   # 윈도우 바탕화면에 바로가기 아이콘 자동 생성
  │    └── stop_windows.bat              # 윈도우용 더블클릭 종료기
  │
  ├── ⚙️ 핵심 엔진 & 설정
@@ -114,8 +114,8 @@ Claude나 Cursor 창 옆에 찰떡같이 띄워두고 스위치를 조작하세�
 3. **종료하기**: `stop_mac.command` 더블 클릭!
 
 ### 🪟 윈도우(Windows) 사용자
-1. **실행하기**: `start_windows.bat` 더블 클릭! (파이썬이 깔려있으면 즉시 실행)
-2. **바탕화면에 바로가기 만들기 (추천)**: `바탕화면_바로가기_생성_윈도우.bat`을 더블 클릭하면, 윈도우 바탕화면에 바로가기 아이콘이 자동 생성됩니다!
+1. **실행하기**: `start_windows.bat` 더블 클릭!
+2. **바탕화면에 바로가기 만들기 (추천)**: `create_shortcut_windows.bat`을 더블 클릭하면, 윈도우 바탕화면에 바로가기 아이콘이 자동 생성됩니다!
 3. **종료하기**: `stop_windows.bat` 더블 클릭!
 
 ---

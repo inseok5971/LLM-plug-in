@@ -1,10 +1,13 @@
 @echo off
-chcp 65001 > nul
+cd /d "%~dp0"
+
 echo ==========================================================
-echo  🛑 AI 플러그인 스위치보드 위젯을 종료합니다...
+echo  Stopping AI Plugin Switchboard Widget...
 echo ==========================================================
 
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr :8765') do taskkill /f /pid %%a >nul 2>&1
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :8765 ^| findstr LISTENING') do (
+    if not "%%a"=="0" taskkill /f /pid %%a >nul 2>&1
+)
 
-echo ✅ 스위치보드가 안전하게 종료되었습니다.
+echo [OK] Switchboard stopped safely.
 timeout /t 2 >nul

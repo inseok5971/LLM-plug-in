@@ -517,8 +517,8 @@ if __name__ == "__main__":
         t.start()
 
         launch_desktop_widget(f"http://127.0.0.1:{port}")
-        print(f"⚡ 스위치보드 미니 위젯이 실행되었습니다: http://127.0.0.1:{port}")
-        print("종료하려면 Ctrl+C를 누르세요.")
+        print(f"[OK] Switchboard Widget started at: http://127.0.0.1:{port}")
+        print("Press Ctrl+C to exit.")
         try:
             import time
             while True:
