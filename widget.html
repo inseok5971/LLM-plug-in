@@ -269,6 +269,97 @@
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
+    /* 모달 스타일 */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+    .modal-card {
+      background: #FFFFFF;
+      width: 100%;
+      max-width: 380px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+      animation: modalFadeIn 0.2s ease-out;
+    }
+    @keyframes modalFadeIn {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .modal-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid #E5E7EB;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-title { font-size: 13.5px; font-weight: 700; color: #111827; display: flex; align-items: center; gap: 6px; }
+    .modal-close { background: none; border: none; font-size: 16px; color: #9CA3AF; cursor: pointer; }
+    .modal-body {
+      padding: 14px 16px;
+      max-height: 380px;
+      overflow-y: auto;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .scan-status-card {
+      background: #F8F9FA;
+      border: 1px solid #E5E7EB;
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .scan-status-title { font-size: 11px; font-weight: 700; color: #4B5563; margin-bottom: 6px; }
+    .scan-app-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+      border-bottom: 1px dashed #E5E7EB;
+    }
+    .scan-app-item:last-child { border-bottom: none; }
+    .scan-app-name { font-weight: 600; color: #111827; }
+    .scan-app-res { font-size: 11px; color: #059669; font-weight: 600; }
+    .detected-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .detected-item {
+      background: #EFF6FF;
+      border: 1px solid #DBEAFE;
+      border-radius: 6px;
+      padding: 8px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-footer {
+      padding: 10px 16px;
+      border-top: 1px solid #E5E7EB;
+      display: flex;
+      justify-content: flex-end;
+      background: #FAFAFA;
+    }
+    .btn-modal-ok {
+      background: #111827;
+      color: #FFFFFF;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-modal-ok:hover { background: #374151; }
   </style>
 </head>
 <body>
@@ -324,6 +415,24 @@
     <span>💡 변경 시 모든 AI 앱에 실시간 적용</span>
     <button class="btn-sync" onclick="autoSetup()">앱 자동 연동</button>
   </footer>
+
+  <!-- 상세 스캔 리포트 모달 다이얼로그 -->
+  <div id="scan-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🔍 내 컴퓨터 플러그인 스캔 결과</span>
+        </div>
+        <button class="modal-close" onclick="closeScanModal()">✕</button>
+      </div>
+      <div class="modal-body" id="scan-modal-body">
+        <!-- JS로 동적 생성 -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn-modal-ok" onclick="closeScanModal()">확인 완료</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     let appData = { categories: [], plugins: [] };
@@ -419,13 +528,9 @@
         const res = await fetch('/api/scan-plugins', { method: 'POST' });
         const data = await res.json();
         if (data.success) {
-          if (data.addedCount > 0) {
-            showToast(`🎉 새 플러그인 ${data.addedCount}개를 감지하여 추가했습니다!`);
-            appData.plugins = data.plugins;
-            render();
-          } else {
-            showToast("✓ 이미 모든 설치 플러그인이 최신 상태입니다.");
-          }
+          appData.plugins = data.plugins;
+          render();
+          showScanReportModal(data);
         }
       } catch (e) {
         showToast("플러그인 불러오기 중 오류가 발생했습니다.");
@@ -434,6 +539,65 @@
         btn.style.opacity = "1";
         spinner.style.animation = "";
       }
+    }
+
+    // 상세 스캔 리포트 팝업 띄우기
+    function showScanReportModal(data) {
+      const modal = document.getElementById("scan-modal");
+      const body = document.getElementById("scan-modal-body");
+
+      let sourcesHtml = data.scannedSources.map(s => `
+        <div class="scan-app-item">
+          <div>
+            <span class="scan-app-name">${s.app}</span>
+            <span style="font-size: 10px; color: #6B7280; display: block;">${s.status}</span>
+          </div>
+          <span class="scan-app-res">${s.count > 0 ? `✓ ${s.count}개 도구 발견` : '확인 완료'}</span>
+        </div>
+      `).join('');
+
+      let addedHtml = "";
+      if (data.addedCount > 0) {
+        addedHtml = `
+          <div>
+            <div style="font-size: 11.5px; font-weight: 700; color: #1D4ED8; margin-bottom: 6px;">
+              🎉 새로 감지되어 추가된 플러그인 (${data.addedCount}개)
+            </div>
+            <div class="detected-list">
+              ${data.addedList.map(item => `
+                <div class="detected-item">
+                  <div>
+                    <span style="font-weight: 700; color: #1E3A8A;">${item.name}</span>
+                    <span style="font-size: 10px; color: #4B5563; display: block;">${item.desc}</span>
+                  </div>
+                  <span style="font-size: 10px; background: #DBEAFE; color: #1E40AF; padding: 2px 6px; border-radius: 4px; font-weight: 600;">${item.tag}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else {
+        addedHtml = `
+          <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 10px 12px; color: #166534;">
+            <div style="font-weight: 700;">✓ 모든 플러그인이 이미 최신 상태입니다.</div>
+            <div style="font-size: 11px; margin-top: 2px; color: #15803D;">기존에 등록된 도구들이 그대로 안전하게 유지되고 있습니다.</div>
+          </div>
+        `;
+      }
+
+      body.innerHTML = `
+        <div class="scan-status-card">
+          <div class="scan-status-title">📂 내 컴퓨터 스캔 대상 경로</div>
+          ${sourcesHtml}
+        </div>
+        ${addedHtml}
+      `;
+
+      modal.style.display = "flex";
+    }
+
+    function closeScanModal() {
+      document.getElementById("scan-modal").style.display = "none";
     }
 
     async function togglePlugin(id, enabled) {

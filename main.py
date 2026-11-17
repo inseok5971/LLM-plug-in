@@ -128,39 +128,58 @@ class WidgetHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps(obj, ensure_ascii=False).encode("utf-8"))
 
-# 컴퓨터에 설치된 새 플러그인(MCP 서버)을 스캔하여 중복 없이 자동 추가
+# 컴퓨터에 설치된 새 플러그인(MCP 서버)을 스캔하여 중복 없이 자동 추가 및 상세 리포트 생성
 def scan_and_merge_plugins():
     home = os.path.expanduser("~")
     system = platform.system()
     discovered_servers = {}
+    scanned_sources = []
 
-    # 스캔할 설정 파일 목록
-    candidate_paths = []
-    if system == "Darwin": # macOS
-        candidate_paths.append(os.path.join(home, "Library", "Application Support", "Claude", "claude_desktop_config.json"))
-        candidate_paths.append(os.path.join(home, ".cursor", "mcp.json"))
-    else: # Windows
-        candidate_paths.append(os.path.join(os.environ.get("APPDATA", home), "Claude", "claude_desktop_config.json"))
-        candidate_paths.append(os.path.join(home, ".cursor", "mcp.json"))
+    # 1. Claude Desktop 설정 파일 스캔
+    if system == "Darwin":
+        claude_path = os.path.join(home, "Library", "Application Support", "Claude", "claude_desktop_config.json")
+    else:
+        claude_path = os.path.join(os.environ.get("APPDATA", home), "Claude", "claude_desktop_config.json")
 
-    for p in candidate_paths:
-        if os.path.exists(p):
-            try:
-                with open(p, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    servers = data.get("mcpServers", {})
-                    for s_name, s_conf in servers.items():
-                        if s_name != "plugin-switchboard" and s_name not in discovered_servers:
-                            discovered_servers[s_name] = s_conf
-            except Exception:
-                pass
+    claude_servers = []
+    if os.path.exists(claude_path):
+        try:
+            with open(claude_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                for s_name, s_conf in data.get("mcpServers", {}).items():
+                    if s_name != "plugin-switchboard":
+                        claude_servers.append(s_name)
+                        discovered_servers[s_name] = ("Claude Desktop", s_conf)
+            scanned_sources.append({"app": "Claude Desktop", "status": "연결됨", "path": claude_path, "count": len(claude_servers), "servers": claude_servers})
+        except Exception as e:
+            scanned_sources.append({"app": "Claude Desktop", "status": f"읽기 오류 ({e})", "path": claude_path, "count": 0, "servers": []})
+    else:
+        scanned_sources.append({"app": "Claude Desktop", "status": "설정 파일 없음", "path": claude_path, "count": 0, "servers": []})
 
+    # 2. Cursor 설정 파일 스캔
+    cursor_path = os.path.join(home, ".cursor", "mcp.json")
+    cursor_servers = []
+    if os.path.exists(cursor_path):
+        try:
+            with open(cursor_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                for s_name, s_conf in data.get("mcpServers", {}).items():
+                    if s_name != "plugin-switchboard" and s_name not in discovered_servers:
+                        cursor_servers.append(s_name)
+                        discovered_servers[s_name] = ("Cursor", s_conf)
+            scanned_sources.append({"app": "Cursor", "status": "연결됨", "path": cursor_path, "count": len(cursor_servers), "servers": cursor_servers})
+        except Exception:
+            scanned_sources.append({"app": "Cursor", "status": "읽기 오류", "path": cursor_path, "count": 0, "servers": []})
+    else:
+        scanned_sources.append({"app": "Cursor", "status": "설정 파일 없음", "path": cursor_path, "count": 0, "servers": []})
+
+    # 기존 설정 읽기
     current_config = load_config()
     existing_ids = {p["id"] for p in current_config.get("plugins", [])}
     
     added_plugins = []
+    already_existing_plugins = []
 
-    # 카테고리 자동 추론 규칙
     def guess_category(name):
         n = name.lower()
         if any(k in n for k in ["video", "movie", "luma", "runway", "kling", "pika", "sora", "animate"]):
@@ -180,37 +199,37 @@ def scan_and_merge_plugins():
         else:
             return "system", "시스템"
 
-    for s_name, s_conf in discovered_servers.items():
+    for s_name, (source_app, s_conf) in discovered_servers.items():
         clean_id = s_name.lower().replace(" ", "-")
         if clean_id not in existing_ids:
             cat, tag = guess_category(s_name)
             new_item = {
                 "id": clean_id,
-                "name": f"{s_name} (설치 감지)",
+                "name": s_name,
                 "cat": cat,
-                "tag": tag,
-                "desc": f"내 컴퓨터에서 자동으로 감지된 {s_name} 플러그인입니다.",
-                "enabled": False
+                "tag": f"{source_app} 연동",
+                "desc": f"{source_app}에서 자동으로 감지되어 불러온 도구입니다.",
+                "enabled": True,
+                "source": source_app
             }
             current_config.setdefault("plugins", []).append(new_item)
             added_plugins.append(new_item)
             existing_ids.add(clean_id)
+        else:
+            already_existing_plugins.append(s_name)
 
     if added_plugins:
         save_config(current_config)
-        return {
-            "success": True,
-            "addedCount": len(added_plugins),
-            "addedNames": [p["name"] for p in added_plugins],
-            "plugins": current_config["plugins"]
-        }
-    else:
-        return {
-            "success": True,
-            "addedCount": 0,
-            "addedNames": [],
-            "plugins": current_config.get("plugins", [])
-        }
+
+    return {
+        "success": True,
+        "scannedSources": scanned_sources,
+        "totalDetected": len(discovered_servers),
+        "addedCount": len(added_plugins),
+        "addedList": added_plugins,
+        "alreadyList": already_existing_plugins,
+        "plugins": current_config["plugins"]
+    }
 
 # 각 AI 앱 설정 파일 자동 등록 (Claude Desktop, Cursor 등)
 def setup_all_apps():
