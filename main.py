@@ -320,7 +320,7 @@ def run_mcp():
                 "result": {
                     "protocolVersion": "2024-11-05",
                     "capabilities": { "tools": {} },
-                    "serverInfo": { "name": "plugin-switchboard", "version": "1.0.0" }
+                    "serverInfo": { "name": "plugin-switchboard", "version": "2.1.0" }
                 }
             }
             sys.stdout.write(json.dumps(res) + "\n")
