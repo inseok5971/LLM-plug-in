@@ -48,6 +48,73 @@
     }
     .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: #10B981; }
 
+    /* 상단 앱 선택 세그먼트 탭 */
+    .app-tabs-container {
+      background: #FFFFFF;
+      padding: 8px 14px;
+      border-bottom: 1px solid #E5E7EB;
+      position: sticky;
+      top: 57px;
+      z-index: 45;
+    }
+    .app-tabs {
+      display: flex;
+      background: #F1F3F5;
+      padding: 3px;
+      border-radius: 8px;
+      gap: 3px;
+    }
+    .app-tab-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 6px 4px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #495057;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+    .app-tab-btn:hover { color: #212529; }
+    .app-tab-btn.active {
+      background: #FFFFFF;
+      color: #111827;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      font-weight: 700;
+    }
+    .app-tab-badge {
+      font-size: 9px;
+      background: #E9ECEF;
+      color: #495057;
+      padding: 1px 4px;
+      border-radius: 10px;
+    }
+    .app-tab-btn.active .app-tab-badge {
+      background: #EFF6FF;
+      color: #2563EB;
+    }
+
+    /* 현재 타깃 안내 바 */
+    .current-target-banner {
+      background: #F8FAFC;
+      border-bottom: 1px solid #E2E8F0;
+      padding: 7px 16px;
+      font-size: 11px;
+      color: #475569;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .target-highlight {
+      font-weight: 700;
+      color: #0F172A;
+    }
+
     /* 프리셋 바 */
     .presets-box {
       background: #FFFFFF;
@@ -55,9 +122,6 @@
       padding: 10px 12px;
       border-radius: 10px;
       border: 1px solid #E5E7EB;
-      position: sticky;
-      top: 57px;
-      z-index: 40;
     }
     .preset-header {
       display: flex;
@@ -367,14 +431,41 @@
   <!-- 헤더 -->
   <header>
     <div>
-      <div class="header-title">⚡ AI 플러그인 스위치보드 <span style="font-size: 10px; background: #EEF2FF; color: #4F46E5; padding: 1px 6px; border-radius: 4px; font-weight: 700; border: 1px solid #E0E7FF;">v2.1</span></div>
-      <div class="header-sub">Claude · Antigravity · Cursor 통합 리모컨</div>
+      <div class="header-title">⚡ AI 플러그인 스위치보드 <span style="font-size: 10px; background: #EEF2FF; color: #4F46E5; padding: 1px 6px; border-radius: 4px; font-weight: 700; border: 1px solid #E0E7FF;">v2.2</span></div>
+      <div class="header-sub">Claude · Cursor · Antigravity 개별 제어 리모컨</div>
     </div>
     <div class="badge-count">
       <span class="badge-dot"></span>
       <span>활성: <b id="header-active-count">0</b>개</span>
     </div>
   </header>
+
+  <!-- AI 앱 개별 선택 탭 바 (v2.2 핵심) -->
+  <div class="app-tabs-container">
+    <div class="app-tabs">
+      <button class="app-tab-btn active" id="tab-claude" onclick="selectAppTab('claude')">
+        <span>🟠 Claude</span>
+        <span class="app-tab-badge" id="badge-tab-claude">0</span>
+      </button>
+      <button class="app-tab-btn" id="tab-cursor" onclick="selectAppTab('cursor')">
+        <span>🔵 Cursor</span>
+        <span class="app-tab-badge" id="badge-tab-cursor">0</span>
+      </button>
+      <button class="app-tab-btn" id="tab-antigravity" onclick="selectAppTab('antigravity')">
+        <span>🟣 Antigravity</span>
+        <span class="app-tab-badge" id="badge-tab-antigravity">0</span>
+      </button>
+      <button class="app-tab-btn" id="tab-all" onclick="selectAppTab('all')">
+        <span>🌐 전체 공통</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 현재 타깃 안내 바 -->
+  <div class="current-target-banner">
+    <div>💡 현재 <span class="target-highlight" id="target-app-name">Claude Desktop</span> 전용 설정 중입니다.</div>
+    <span style="font-size: 10px; color: #059669; font-weight: 600;">🟢 실시간 동기화</span>
+  </div>
 
   <!-- 스마트 자동 감지 및 불러오기 바 -->
   <div style="background: #FFFFFF; margin: 10px 14px 4px; padding: 10px 14px; border-radius: 10px; border: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
@@ -437,6 +528,24 @@
   <script>
     let appData = { categories: [], plugins: [] };
     let allExpanded = true;
+    let currentApp = "claude"; // 'claude', 'cursor', 'antigravity', 'all'
+
+    const APP_NAMES = {
+      "claude": "Claude Desktop",
+      "cursor": "Cursor (코덱스)",
+      "antigravity": "Antigravity",
+      "all": "모든 AI 앱 (일괄 적용)"
+    };
+
+    function selectAppTab(appKey) {
+      currentApp = appKey;
+      document.querySelectorAll(".app-tab-btn").forEach(btn => btn.classList.remove("active"));
+      const targetBtn = document.getElementById(`tab-${appKey}`);
+      if (targetBtn) targetBtn.classList.add("active");
+
+      document.getElementById("target-app-name").textContent = APP_NAMES[appKey];
+      render();
+    }
 
     async function loadData() {
       try {
@@ -450,20 +559,29 @@
       }
     }
 
-    // 100% 모든 카테고리와 세부 플러그인을 기본 오픈 상태로 렌더링
+    function isPluginEnabledForCurrentApp(p) {
+      if (currentApp === "all") {
+        return p.enabled || false;
+      }
+      if (p.enabled_apps && p.enabled_apps[currentApp] !== undefined) {
+        return p.enabled_apps[currentApp];
+      }
+      return p.enabled || false;
+    }
+
     function render() {
       const root = document.getElementById("categories-root");
       root.innerHTML = "";
 
       appData.categories.forEach(cat => {
         const catPlugins = appData.plugins.filter(p => p.cat === cat.id);
-        const activeCount = catPlugins.filter(p => p.enabled).length;
+        const activeCount = catPlugins.filter(p => isPluginEnabledForCurrentApp(p)).length;
 
         const card = document.createElement("div");
         card.className = "category-card";
 
         const details = document.createElement("details");
-        details.open = allExpanded; // 기본적으로 전체 시원하게 펼쳐둠!
+        details.open = allExpanded;
 
         details.innerHTML = `
           <summary class="cat-summary">
@@ -482,21 +600,24 @@
             </div>
           </summary>
           <div class="plugin-list">
-            ${catPlugins.map(p => `
-              <div class="plugin-item">
-                <div class="plugin-info">
-                  <div class="plugin-header">
-                    <span class="plugin-name">${p.name}</span>
-                    <span class="plugin-tag">${p.tag}</span>
+            ${catPlugins.map(p => {
+              const isChecked = isPluginEnabledForCurrentApp(p);
+              return `
+                <div class="plugin-item">
+                  <div class="plugin-info">
+                    <div class="plugin-header">
+                      <span class="plugin-name">${p.name}</span>
+                      <span class="plugin-tag">${p.tag}</span>
+                    </div>
+                    <div class="plugin-desc">${p.desc}</div>
                   </div>
-                  <div class="plugin-desc">${p.desc}</div>
+                  <label class="switch">
+                    <input type="checkbox" ${isChecked ? "checked" : ""} onchange="togglePlugin('${p.id}', this.checked)">
+                    <span class="slider"></span>
+                  </label>
                 </div>
-                <label class="switch">
-                  <input type="checkbox" ${p.enabled ? "checked" : ""} onchange="togglePlugin('${p.id}', this.checked)">
-                  <span class="slider"></span>
-                </label>
-              </div>
-            `).join("")}
+              `;
+            }).join("")}
           </div>
         `;
 
@@ -505,15 +626,151 @@
       });
 
       updateHeaderCount();
+      updateTabBadges();
     }
 
-    // 전체 펼치기 / 전체 접기 토글
     function toggleAllAccordions() {
       allExpanded = !allExpanded;
       const btn = document.getElementById("btn-toggle-all");
       btn.textContent = allExpanded ? "▼ 전체 접기" : "▶ 전체 펼치기";
       const detailsList = document.querySelectorAll("#categories-root details");
       detailsList.forEach(d => d.open = allExpanded);
+    }
+
+    async function togglePlugin(id, enabled) {
+      const p = appData.plugins.find(item => item.id === id);
+      if (p) {
+        p.enabled_apps = p.enabled_apps || {};
+        if (currentApp === "all") {
+          p.enabled_apps["claude"] = enabled;
+          p.enabled_apps["cursor"] = enabled;
+          p.enabled_apps["antigravity"] = enabled;
+          p.enabled = enabled;
+        } else {
+          p.enabled_apps[currentApp] = enabled;
+        }
+
+        updateHeaderCount();
+        updateCategoryBadge(p.cat);
+        updateTabBadges();
+
+        const appLabel = APP_NAMES[currentApp];
+        if (enabled) {
+          showToast(`⚡ [${p.name}] 켜짐 ➔ [${appLabel}]에 실시간 반영 완료!`);
+        } else {
+          showToast(`✕ [${p.name}] 꺼짐 ➔ [${appLabel}]에서 차단 완료!`);
+        }
+
+        try {
+          await fetch('/api/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, app: currentApp, enabled })
+          });
+        } catch (e) {}
+      }
+    }
+
+    async function turnOffCategory(catId, event) {
+      if (event) { event.stopPropagation(); event.preventDefault(); }
+      appData.plugins.forEach(p => {
+        if (p.cat === catId) {
+          p.enabled_apps = p.enabled_apps || {};
+          if (currentApp === "all") {
+            p.enabled_apps["claude"] = false;
+            p.enabled_apps["cursor"] = false;
+            p.enabled_apps["antigravity"] = false;
+            p.enabled = false;
+          } else {
+            p.enabled_apps[currentApp] = false;
+          }
+        }
+      });
+      render();
+      showToast(`해당 카테고리를 [${APP_NAMES[currentApp]}]에서 모두 껐습니다.`);
+      try {
+        await fetch('/api/category-off', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cat: catId, app: currentApp })
+        });
+      } catch (e) {}
+    }
+
+    async function setPreset(mode) {
+      appData.plugins.forEach(p => {
+        p.enabled_apps = p.enabled_apps || {};
+        if (currentApp === "all") {
+          p.enabled_apps["claude"] = false;
+          p.enabled_apps["cursor"] = false;
+          p.enabled_apps["antigravity"] = false;
+          p.enabled = false;
+        } else {
+          p.enabled_apps[currentApp] = false;
+        }
+      });
+
+      const presetMap = {
+        "video": "runway",
+        "image": "midjourney",
+        "audio": "elevenlabs",
+        "search": "google-search"
+      };
+
+      const targetId = presetMap[mode];
+      if (targetId) {
+        const t = appData.plugins.find(p => p.id === targetId);
+        if (t) {
+          if (currentApp === "all") {
+            t.enabled_apps["claude"] = true;
+            t.enabled_apps["cursor"] = true;
+            t.enabled_apps["antigravity"] = true;
+            t.enabled = true;
+          } else {
+            t.enabled_apps[currentApp] = true;
+          }
+        }
+      }
+
+      render();
+      const appLabel = APP_NAMES[currentApp];
+      if (mode === 'none') {
+        showToast(`모든 플러그인을 [${appLabel}]에서 껐습니다. (순수 대화 모드)`);
+      } else {
+        showToast(`[${mode}] 모드가 [${appLabel}]에 적용되었습니다.`);
+      }
+
+      try {
+        await fetch('/api/preset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ preset: mode, app: currentApp })
+        });
+      } catch (e) {}
+    }
+
+    function updateCategoryBadge(catId) {
+      const catPlugins = appData.plugins.filter(p => p.cat === catId);
+      const activeCount = catPlugins.filter(p => isPluginEnabledForCurrentApp(p)).length;
+      const badge = document.getElementById(`badge-${catId}`);
+      if (badge) {
+        badge.textContent = `${activeCount} / ${catPlugins.length} 켜짐`;
+        badge.className = `cat-badge ${activeCount > 0 ? 'cat-badge-active' : 'cat-badge-none'}`;
+      }
+    }
+
+    function updateHeaderCount() {
+      const activeCount = appData.plugins.filter(p => isPluginEnabledForCurrentApp(p)).length;
+      const el = document.getElementById("header-active-count");
+      if (el) el.textContent = activeCount;
+    }
+
+    function updateTabBadges() {
+      ['claude', 'cursor', 'antigravity'].forEach(app => {
+        const count = appData.plugins.filter(p => p.enabled_apps && p.enabled_apps[app]).length;
+        const b = document.getElementById(`badge-tab-${app}`);
+        if (b) b.textContent = count;
+      });
     }
 
     async function scanPlugins() {
@@ -600,85 +857,6 @@
       document.getElementById("scan-modal").style.display = "none";
     }
 
-    async function togglePlugin(id, enabled) {
-      const p = appData.plugins.find(item => item.id === id);
-      if (p) {
-        p.enabled = enabled;
-        updateHeaderCount();
-        updateCategoryBadge(p.cat);
-        try {
-          await fetch('/api/toggle', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id, enabled })
-          });
-        } catch (e) {}
-      }
-    }
-
-    async function turnOffCategory(catId, event) {
-      if (event) { event.stopPropagation(); event.preventDefault(); }
-      appData.plugins.forEach(p => {
-        if (p.cat === catId) p.enabled = false;
-      });
-      render();
-      showToast("해당 카테고리의 모든 플러그인을 껐습니다.");
-      try {
-        await fetch('/api/category-off', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cat: catId })
-        });
-      } catch (e) {}
-    }
-
-    async function setPreset(mode) {
-      appData.plugins.forEach(p => p.enabled = false);
-      if (mode === 'none') {
-        showToast("모든 플러그인을 껐습니다. (순수 질문 모드)");
-      } else if (mode === 'video') {
-        const t = appData.plugins.find(p => p.id === 'runway');
-        if (t) t.enabled = true;
-        showToast("🎬 영상 모드: 런웨이를 켰습니다.");
-      } else if (mode === 'image') {
-        const t = appData.plugins.find(p => p.id === 'midjourney');
-        if (t) t.enabled = true;
-        showToast("🎨 그림 모드: 미드저니를 켰습니다.");
-      } else if (mode === 'audio') {
-        const t = appData.plugins.find(p => p.id === 'elevenlabs');
-        if (t) t.enabled = true;
-        showToast("🎵 음성 모드: 일레븐랩스를 켰습니다.");
-      } else if (mode === 'search') {
-        const t = appData.plugins.find(p => p.id === 'google-search');
-        if (t) t.enabled = true;
-        showToast("🔍 검색 모드: 구글 검색을 켰습니다.");
-      }
-      render();
-      try {
-        await fetch('/api/preset', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ preset: mode })
-        });
-      } catch (e) {}
-    }
-
-    function updateCategoryBadge(catId) {
-      const catPlugins = appData.plugins.filter(p => p.cat === catId);
-      const activeCount = catPlugins.filter(p => p.enabled).length;
-      const badge = document.getElementById(`badge-${catId}`);
-      if (badge) {
-        badge.textContent = `${activeCount} / ${catPlugins.length} 켜짐`;
-        badge.className = `cat-badge ${activeCount > 0 ? 'cat-badge-active' : 'cat-badge-none'}`;
-      }
-    }
-
-    function updateHeaderCount() {
-      const activeCount = appData.plugins.filter(p => p.enabled).length;
-      const el = document.getElementById("header-active-count");
-      if (el) el.textContent = activeCount;
-    }
-
     async function autoSetup() {
       try {
         const res = await fetch('/api/auto-setup', { method: 'POST' });
@@ -694,7 +872,7 @@
       const text = document.getElementById("toast-text");
       text.textContent = msg;
       toast.style.display = "flex";
-      setTimeout(() => { toast.style.display = "none"; }, 2500);
+      setTimeout(() => { toast.style.display = "none"; }, 3000);
     }
 
     document.addEventListener("DOMContentLoaded", () => {

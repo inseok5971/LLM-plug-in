@@ -74,8 +74,16 @@ class WidgetHandler(SimpleHTTPRequestHandler):
         if parsed.path == "/api/toggle":
             p_id = req.get("id")
             enabled = req.get("enabled", False)
+            target_app = req.get("app", "claude")
             for p in data.get("plugins", []):
                 if p["id"] == p_id:
+                    p.setdefault("enabled_apps", {})
+                    if target_app == "all":
+                        p["enabled_apps"]["claude"] = enabled
+                        p["enabled_apps"]["cursor"] = enabled
+                        p["enabled_apps"]["antigravity"] = enabled
+                    else:
+                        p["enabled_apps"][target_app] = enabled
                     p["enabled"] = enabled
                     break
             save_config(data)
@@ -84,8 +92,16 @@ class WidgetHandler(SimpleHTTPRequestHandler):
 
         elif parsed.path == "/api/category-off":
             cat = req.get("cat")
+            target_app = req.get("app", "claude")
             for p in data.get("plugins", []):
                 if p.get("cat") == cat:
+                    p.setdefault("enabled_apps", {})
+                    if target_app == "all":
+                        p["enabled_apps"]["claude"] = False
+                        p["enabled_apps"]["cursor"] = False
+                        p["enabled_apps"]["antigravity"] = False
+                    else:
+                        p["enabled_apps"][target_app] = False
                     p["enabled"] = False
             save_config(data)
             self._send_json({"success": True})
@@ -93,19 +109,23 @@ class WidgetHandler(SimpleHTTPRequestHandler):
 
         elif parsed.path == "/api/preset":
             preset = req.get("preset")
-            for p in data.get("plugins", []):
-                p["enabled"] = False
+            target_app = req.get("app", "claude")
             preset_map = {
                 "video": "runway",
                 "image": "midjourney",
                 "audio": "elevenlabs",
                 "search": "google-search"
             }
-            if preset in preset_map:
-                for p in data.get("plugins", []):
-                    if p["id"] == preset_map[preset]:
-                        p["enabled"] = True
-                        break
+            target_id = preset_map.get(preset)
+            for p in data.get("plugins", []):
+                p.setdefault("enabled_apps", {})
+                is_on = (p["id"] == target_id)
+                if target_app == "all":
+                    p["enabled_apps"]["claude"] = is_on
+                    p["enabled_apps"]["cursor"] = is_on
+                    p["enabled_apps"]["antigravity"] = is_on
+                else:
+                    p["enabled_apps"][target_app] = is_on
             save_config(data)
             self._send_json({"success": True})
             return
@@ -248,13 +268,18 @@ def setup_all_apps():
     else:
         claude_config_path = os.path.join(os.environ.get("APPDATA", home), "Claude", "claude_desktop_config.json")
 
+    claude_mcp_entry = {
+        "command": sys.executable,
+        "args": [os.path.join(BASE_DIR, "main.py"), "--mcp", "--app=claude"]
+    }
+
     try:
         os.makedirs(os.path.dirname(claude_config_path), exist_ok=True)
         conf = {}
         if os.path.exists(claude_config_path):
             with open(claude_config_path, "r", encoding="utf-8") as f:
                 conf = json.load(f)
-        conf.setdefault("mcpServers", {})["plugin-switchboard"] = mcp_entry
+        conf.setdefault("mcpServers", {})["plugin-switchboard"] = claude_mcp_entry
         with open(claude_config_path, "w", encoding="utf-8") as f:
             json.dump(conf, f, ensure_ascii=False, indent=2)
         configured_apps.append("Claude Desktop")
@@ -263,13 +288,17 @@ def setup_all_apps():
 
     # 2. Cursor / Codex 설정
     cursor_config_path = os.path.join(home, ".cursor", "mcp.json")
+    cursor_mcp_entry = {
+        "command": sys.executable,
+        "args": [os.path.join(BASE_DIR, "main.py"), "--mcp", "--app=cursor"]
+    }
     try:
         os.makedirs(os.path.dirname(cursor_config_path), exist_ok=True)
         conf = {}
         if os.path.exists(cursor_config_path):
             with open(cursor_config_path, "r", encoding="utf-8") as f:
                 conf = json.load(f)
-        conf.setdefault("mcpServers", {})["plugin-switchboard"] = mcp_entry
+        conf.setdefault("mcpServers", {})["plugin-switchboard"] = cursor_mcp_entry
         with open(cursor_config_path, "w", encoding="utf-8") as f:
             json.dump(conf, f, ensure_ascii=False, indent=2)
         configured_apps.append("Cursor")
@@ -320,6 +349,11 @@ def launch_desktop_widget(url):
 
 # MCP (Model Context Protocol) 표준 stdio 서버 핸들러
 def run_mcp():
+    target_app = "claude"
+    for arg in sys.argv:
+        if arg.startswith("--app="):
+            target_app = arg.split("=", 1)[1].lower()
+
     for line in sys.stdin:
         line = line.strip()
         if not line:
@@ -333,30 +367,41 @@ def run_mcp():
         method = req.get("method")
 
         if method == "initialize":
+            params = req.get("params", {})
+            client_name = params.get("clientInfo", {}).get("name", "").lower()
+            if "cursor" in client_name:
+                target_app = "cursor"
+            elif "antigravity" in client_name:
+                target_app = "antigravity"
+            elif "claude" in client_name:
+                target_app = "claude"
+
             res = {
                 "jsonrpc": "2.0",
                 "id": req_id,
                 "result": {
                     "protocolVersion": "2024-11-05",
                     "capabilities": { "tools": {} },
-                    "serverInfo": { "name": "plugin-switchboard", "version": "2.1.0" }
+                    "serverInfo": { "name": "plugin-switchboard", "version": "2.2.0" }
                 }
             }
             sys.stdout.write(json.dumps(res) + "\n")
             sys.stdout.flush()
 
         elif method == "tools/list":
-            # 핵심: 현재 켜져 있는 플러그인만 LLM에 전달!
+            # 핵심: 현재 연결된 AI 앱(target_app)에 켜져 있는 플러그인만 전달!
             data = load_config()
             tools = [
                 {
                     "name": "switchboard_status",
-                    "description": "현재 활성화된 플러그인 목록과 스위치 상태를 확인합니다.",
+                    "description": f"현재 [{target_app}]에 활성화된 플러그인 목록을 확인합니다.",
                     "inputSchema": { "type": "object", "properties": {} }
                 }
             ]
             for p in data.get("plugins", []):
-                if p.get("enabled"):
+                enabled_apps = p.get("enabled_apps", {})
+                is_active = enabled_apps.get(target_app, p.get("enabled", False))
+                if is_active:
                     tools.append({
                         "name": f"plugin_{p['id']}",
                         "description": f"[{p['name']}] {p['desc']}",
