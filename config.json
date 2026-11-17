@@ -82,9 +82,9 @@
       "cat": "video",
       "tag": "인물 동작",
       "desc": "사람 표정과 걷기 등 자연스러운 신체 묘사",
-      "enabled": false,
+      "enabled": true,
       "enabled_apps": {
-        "claude": false,
+        "claude": true,
         "cursor": false,
         "antigravity": true
       }
@@ -95,9 +95,9 @@
       "cat": "video",
       "tag": "특수효과",
       "desc": "물체가 녹거나 터지는 재미있는 숏폼 효과",
-      "enabled": false,
+      "enabled": true,
       "enabled_apps": {
-        "claude": false,
+        "claude": true,
         "cursor": false,
         "antigravity": false
       }

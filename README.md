@@ -1,15 +1,40 @@
 # ⚡ AI 플러그인 스위치보드 (Unified AI Switchboard) `v2.2`
 
 > **Claude, Antigravity, Cursor, Gemini, GPT 전용 통합 플러그인 스위치 리모컨**  
-> 윈도우(Windows) & 맥(macOS) 100% 공용 지원 (데스크톱 독립 미니 위젯)
+> 윈도우(Windows) & 맥(macOS) 100% 공용 올인원 지원 (데스크톱 독립 미니 위젯)
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-v2.2-blue?style=flat-square&logo=git" alt="Version 2.2" />
   <img src="https://img.shields.io/badge/Standard-MCP%20(Model%20Context%20Protocol)-indigo?style=flat-square" alt="MCP" />
-  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20macOS-success?style=flat-square" alt="Platforms" />
+  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20(All--in--One)-success?style=flat-square" alt="Platforms" />
   <img src="https://img.shields.io/badge/Multi--LLM-Claude%20%7C%20Cursor%20%7C%20Antigravity-orange?style=flat-square" alt="Multi-LLM Control" />
-  <img src="https://img.shields.io/badge/Language-Korean%20(한국어)-purple?style=flat-square" alt="Korean Support" />
+  <img src="https://img.shields.io/badge/Language-Korean%20(한국어%20100%25)-purple?style=flat-square" alt="Korean Support" />
 </p>
+
+---
+
+## 💡 본 프로젝트의 핵심: "윈도우 & 맥 올인원(All-in-One) 패키지"
+
+별도로 윈도우용과 맥용 다운로드 링크를 찾아다니실 필요가 없습니다!  
+**이 저장소 하나만 다운로드받으면, 본인의 운영체제(맥 또는 윈도우)에 맞는 실행·설치 파일이 세트로 완벽하게 준비**되어 있습니다.
+
+```text
+📁 LLM-plug-in (다운로드 받은 폴더)
+ ├── 🍎 맥(macOS) 전용 파일
+ │    ├── start_mac.command             # 맥용 더블클릭 실행기
+ │    ├── 바탕화면_바로가기_생성_맥.command   # 맥 바탕화면에 앱 아이콘 자동 생성
+ │    └── stop_mac.command              # 맥용 더블클릭 종료기
+ │
+ ├── 🪟 윈도우(Windows) 전용 파일
+ │    ├── start_windows.bat             # 윈도우용 더블클릭 실행기
+ │    ├── 바탕화면_바로가기_생성_윈도우.bat  # 윈도우 바탕화면에 바로가기 아이콘 자동 생성
+ │    └── stop_windows.bat              # 윈도우용 더블클릭 종료기
+ │
+ ├── ⚙️ 핵심 엔진 & 설정
+ │    ├── main.py                       # 경량 HTTP 및 표준 MCP 게이트웨이 서버
+ │    ├── widget.html                   # 스마트폰 크기의 독립 미니 위젯 UI (v2.2)
+ │    └── config.json                   # 8대 카테고리 19종 플러그인 상태 DB
+```
 
 ---
 
@@ -70,22 +95,34 @@ Claude나 Cursor 창 옆에 찰떡같이 띄워두고 스위치를 조작하세�
 
 ---
 
-## 🚀 10초 초간단 실행 방법 (윈도우 & 맥 동일)
+## 🚀 운영체제별 사용 가이드 (10초 마스터)
 
-1. 우측 상단 초록색 **[Code]** 버튼 -> **[Download ZIP]**을 눌러 다운로드 후 압축을 풉니다.
-2. 내 컴퓨터에 맞는 실행 파일을 **더블 클릭**합니다:
-   - **맥(Mac) 사용자**: `start_mac.command` 더블 클릭 (또는 바탕화면의 `AI 플러그인 스위치보드` 앱 실행)
-   - **윈도우(Windows) 사용자**: `start_windows.bat` 더블 클릭 (`바탕화면_바로가기_생성_윈도우.bat`을 실행하면 바탕화면 바로가기 아이콘 자동 생성!)
-3. 화면에 예쁜 **미니 스위치보드 위젯 창**이 뜹니다!
-4. 위젯 창 맨 아래의 **`[앱 자동 연동]`** 버튼을 한 번만 클릭하면, 내 컴퓨터의 Claude Desktop / Cursor 등에 **자동으로 스위치보드가 등록**됩니다. 🎉
-   - *(최초 연동 시 Claude Desktop을 한 번 완전히 종료(`Cmd+Q`) 후 재실행해 주시면 즉시 반영됩니다.)*
-5. 나중에 새 플러그인을 깔았을 때는 상단 **`[🔄 가져오기]`** 버튼을 누르면 새 플러그인만 감지되어 자동으로 추가됩니다!
+우측 상단 초록색 **[Code]** 버튼 -> **[Download ZIP]**을 눌러 다운로드 후 압축을 풉니다.
+
+### 🍎 맥(macOS) 사용자
+1. **실행하기**: `start_mac.command` 더블 클릭!
+2. **바탕화면에 앱 만들기 (추천)**: `바탕화면_바로가기_생성_맥.command`를 더블 클릭하면, 맥 바탕화면에 카카오톡 같은 **진짜 앱 아이콘(`AI 플러그인 스위치보드`)**이 생성됩니다. 앞으로는 그것만 누르면 켜집니다!
+3. **종료하기**: `stop_mac.command` 더블 클릭!
+
+### 🪟 윈도우(Windows) 사용자
+1. **실행하기**: `start_windows.bat` 더블 클릭! (파이썬이 깔려있으면 즉시 실행)
+2. **바탕화면에 바로가기 만들기 (추천)**: `바탕화면_바로가기_생성_윈도우.bat`을 더블 클릭하면, 윈도우 바탕화면에 바로가기 아이콘이 자동 생성됩니다!
+3. **종료하기**: `stop_windows.bat` 더블 클릭!
+
+---
+
+## 🔗 AI 앱(Claude / Cursor 등) 자동 연동 방법
+
+1. 위젯 창 맨 아래의 **`[앱 자동 연동]`** 버튼을 한 번만 클릭합니다.
+2. 내 컴퓨터의 Claude Desktop, Cursor 설정 파일에 스위치보드가 **자동으로 즉시 등록**됩니다. 🎉
+3. *(최초 연동 시 Claude Desktop 등 해당 앱을 한 번 완전히 종료(`Cmd+Q` 또는 `Alt+F4`) 후 재실행해 주시면 즉시 활성화됩니다.)*
+4. 나중에 새 플러그인을 깔았을 때는 상단 **`[🔄 가져오기]`** 버튼을 누르면 새 플러그인만 감지되어 자동으로 추가됩니다!
 
 ---
 
 ## 💡 어떻게 모든 AI(Claude, 안티그래비티, Cursor 등)에 다 먹히나요?
 
-지금 전 세계 AI 앱들이 도구를 연결하는 표준 규격인 **MCP(Model Context Protocol)**를 기반으로 작동합니다:
+전 세계 AI 앱들이 도구를 연결하는 글로벌 표준 규격인 **MCP(Model Context Protocol)**를 기반으로 작동합니다:
 
 1. 사용자가 위젯에서 **원하는 AI 탭(예: Claude)을 누르고 런웨이(Runway)만 [ON]**으로 켭니다.
 2. Claude Desktop 등 해당 AI 앱에 질문을 던지면,
@@ -94,7 +131,7 @@ Claude나 Cursor 창 옆에 찰떡같이 띄워두고 스위치를 조작하세�
 
 ---
 
-## 📂 8대 표준 카테고리 구성
+## 📂 8대 표준 카테고리 구성 (기본 19종 탑재)
 
 - 🎬 **영상 만들기 및 편집**: 런웨이(Runway), 루마(Luma), 클링(Kling), 피카(Pika)
 - 🎨 **그림 및 디자인 그리기**: 미드저니(Midjourney), 플럭스(FLUX), 달리 3(DALL-E 3)
