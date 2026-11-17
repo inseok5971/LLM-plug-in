@@ -440,24 +440,10 @@
     </div>
   </header>
 
-  <!-- AI 앱 개별 선택 탭 바 (v2.2 핵심) -->
+  <!-- AI 앱 개별 선택 탭 바 (내 컴퓨터에 실제 설치된 앱만 동적으로 표시!) -->
   <div class="app-tabs-container">
-    <div class="app-tabs">
-      <button class="app-tab-btn active" id="tab-claude" onclick="selectAppTab('claude')">
-        <span>🟠 Claude</span>
-        <span class="app-tab-badge" id="badge-tab-claude">0</span>
-      </button>
-      <button class="app-tab-btn" id="tab-cursor" onclick="selectAppTab('cursor')">
-        <span>🔵 Cursor</span>
-        <span class="app-tab-badge" id="badge-tab-cursor">0</span>
-      </button>
-      <button class="app-tab-btn" id="tab-antigravity" onclick="selectAppTab('antigravity')">
-        <span>🟣 Antigravity</span>
-        <span class="app-tab-badge" id="badge-tab-antigravity">0</span>
-      </button>
-      <button class="app-tab-btn" id="tab-all" onclick="selectAppTab('all')">
-        <span>🌐 전체 공통</span>
-      </button>
+    <div class="app-tabs" id="app-tabs-list">
+      <!-- JS로 동적 생성 -->
     </div>
   </div>
 
@@ -467,16 +453,21 @@
     <span style="font-size: 10px; color: #059669; font-weight: 600;">🟢 실시간 동기화</span>
   </div>
 
-  <!-- 스마트 자동 감지 및 불러오기 바 -->
+  <!-- 스마트 자동 감지 및 샘플 정리 툴바 -->
   <div style="background: #FFFFFF; margin: 10px 14px 4px; padding: 10px 14px; border-radius: 10px; border: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
     <div>
-      <div style="font-size: 12px; font-weight: 700; color: #111827;">내 설치 플러그인 불러오기</div>
-      <div style="font-size: 10.5px; color: #6B7280; margin-top: 1px;">기존 건 두고, 새로 깐 것만 쏙 감지</div>
+      <div style="font-size: 12px; font-weight: 700; color: #111827;">내 컴퓨터 플러그인 연동</div>
+      <div style="font-size: 10.5px; color: #6B7280; margin-top: 1px;">실제 설치된 MCP 도구 자동 감지</div>
     </div>
-    <button id="btn-scan" onclick="scanPlugins()" style="background: #2563EB; color: #FFFFFF; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: background 0.15s;">
-      <span id="scan-spinner">🔄</span>
-      <span>가져오기</span>
-    </button>
+    <div style="display: flex; gap: 6px;">
+      <button id="btn-clear-samples" onclick="clearSamples()" style="background: #F3F4F6; color: #4B5563; border: 1px solid #D1D5DB; padding: 5px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: background 0.15s;" title="샘플 도구를 숨기고 내 실제 도구만 표시">
+        🧹 샘플 제거
+      </button>
+      <button id="btn-scan" onclick="scanPlugins()" style="background: #2563EB; color: #FFFFFF; border: none; padding: 5px 11px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: background 0.15s;">
+        <span id="scan-spinner">🔄</span>
+        <span>가져오기</span>
+      </button>
+    </div>
   </div>
 
   <!-- 원클릭 모드 바 -->
@@ -526,16 +517,47 @@
   </div>
 
   <script>
-    let appData = { categories: [], plugins: [] };
+    let appData = { categories: [], plugins: [], installed_apps: [] };
     let allExpanded = true;
     let currentApp = "claude"; // 'claude', 'cursor', 'antigravity', 'all'
 
-    const APP_NAMES = {
-      "claude": "Claude Desktop",
-      "cursor": "Cursor (코덱스)",
-      "antigravity": "Antigravity",
-      "all": "모든 AI 앱 (일괄 적용)"
-    };
+    function renderAppTabs() {
+      const container = document.getElementById("app-tabs-list");
+      if (!container) return;
+
+      const installed = appData.installed_apps || [
+        { id: "claude", name: "Claude Desktop", icon: "🟠" }
+      ];
+
+      // 만약 현재 선택된 앱이 실제 설치된 앱 목록에 없는 경우(예: Antigravity가 없는 윈도우 PC), 첫 번째 설치된 앱으로 자동 전환!
+      if (!installed.some(a => a.id === currentApp) && currentApp !== "all") {
+        currentApp = installed[0].id;
+      }
+
+      let html = "";
+      installed.forEach(app => {
+        const isActive = (currentApp === app.id) ? "active" : "";
+        html += `
+          <button class="app-tab-btn ${isActive}" id="tab-${app.id}" onclick="selectAppTab('${app.id}')">
+            <span>${app.icon} ${app.name}</span>
+            <span class="app-tab-badge" id="badge-tab-${app.id}">0</span>
+          </button>
+        `;
+      });
+
+      html += `
+        <button class="app-tab-btn ${currentApp === "all" ? "active" : ""}" id="tab-all" onclick="selectAppTab('all')">
+          <span>🌐 전체 공통</span>
+        </button>
+      `;
+      container.innerHTML = html;
+
+      const currentAppObj = installed.find(a => a.id === currentApp);
+      const targetNameEl = document.getElementById("target-app-name");
+      if (targetNameEl) {
+        targetNameEl.textContent = currentAppObj ? currentAppObj.name : "모든 AI 앱 (공통)";
+      }
+    }
 
     function selectAppTab(appKey) {
       currentApp = appKey;
@@ -543,7 +565,9 @@
       const targetBtn = document.getElementById(`tab-${appKey}`);
       if (targetBtn) targetBtn.classList.add("active");
 
-      document.getElementById("target-app-name").textContent = APP_NAMES[appKey];
+      const installed = appData.installed_apps || [];
+      const currentAppObj = installed.find(a => a.id === appKey);
+      document.getElementById("target-app-name").textContent = currentAppObj ? currentAppObj.name : "모든 AI 앱 (일괄 적용)";
       render();
     }
 
@@ -570,11 +594,33 @@
     }
 
     function render() {
+      renderAppTabs();
+
       const root = document.getElementById("categories-root");
       root.innerHTML = "";
 
+      if (!appData.plugins || appData.plugins.length === 0) {
+        root.innerHTML = `
+          <div style="text-align: center; padding: 42px 20px; background: #FFFFFF; margin: 14px; border-radius: 12px; border: 1px dashed #D1D5DB;">
+            <div style="font-size: 34px; margin-bottom: 8px;">🔌</div>
+            <div style="font-size: 14px; font-weight: 700; color: #1F2937; margin-bottom: 6px;">등록된 플러그인이 없습니다</div>
+            <div style="font-size: 11.5px; color: #6B7280; line-height: 1.5; margin-bottom: 16px;">
+              컴퓨터의 Claude Desktop 등에 설치된 도구가 있다면 상단 <b>[🔄 가져오기]</b>를 누르시거나,<br>아래 버튼을 눌러 추천 샘플 도구들을 불러와 보세요!
+            </div>
+            <button onclick="restoreSamples()" style="background: #2563EB; color: #FFFFFF; border: none; font-size: 12px; font-weight: 600; padding: 8px 16px; border-radius: 8px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+              🎁 추천 샘플 도구(19종) 불러오기
+            </button>
+          </div>
+        `;
+        updateHeaderCount();
+        updateTabBadges();
+        return;
+      }
+
       appData.categories.forEach(cat => {
         const catPlugins = appData.plugins.filter(p => p.cat === cat.id);
+        if (catPlugins.length === 0) return; // 빈 카테고리는 깔끔하게 숨김
+
         const activeCount = catPlugins.filter(p => isPluginEnabledForCurrentApp(p)).length;
 
         const card = document.createElement("div");
@@ -602,12 +648,18 @@
           <div class="plugin-list">
             ${catPlugins.map(p => {
               const isChecked = isPluginEnabledForCurrentApp(p);
+              const tagHtml = p.is_real 
+                ? `<span class="plugin-tag" style="background:#D1FAE5; color:#065F46; font-weight:700;">🟢 실제 연동</span>`
+                : (p.is_sample 
+                    ? `<span class="plugin-tag" style="background:#F3F4F6; color:#6B7280;">샘플</span>`
+                    : `<span class="plugin-tag">${p.tag}</span>`);
+
               return `
                 <div class="plugin-item">
                   <div class="plugin-info">
                     <div class="plugin-header">
                       <span class="plugin-name">${p.name}</span>
-                      <span class="plugin-tag">${p.tag}</span>
+                      ${tagHtml}
                     </div>
                     <div class="plugin-desc">${p.desc}</div>
                   </div>
@@ -766,11 +818,35 @@
     }
 
     function updateTabBadges() {
-      ['claude', 'cursor', 'antigravity'].forEach(app => {
-        const count = appData.plugins.filter(p => p.enabled_apps && p.enabled_apps[app]).length;
-        const b = document.getElementById(`badge-tab-${app}`);
+      const installed = appData.installed_apps || [];
+      installed.forEach(app => {
+        const count = appData.plugins.filter(p => p.enabled_apps && p.enabled_apps[app.id]).length;
+        const b = document.getElementById(`badge-tab-${app.id}`);
         if (b) b.textContent = count;
       });
+    }
+
+    async function clearSamples() {
+      if (!confirm("19종 샘플 도구를 정리하고, 내 컴퓨터에 실제로 설치된 플러그인만 남기시겠습니까?")) return;
+      try {
+        const res = await fetch('/api/clear-samples', { method: 'POST' });
+        const json = await res.json();
+        showToast("샘플 도구를 정리했습니다.");
+        await loadData();
+      } catch (e) {
+        showToast("정리 실패");
+      }
+    }
+
+    async function restoreSamples() {
+      try {
+        const res = await fetch('/api/restore-samples', { method: 'POST' });
+        const json = await res.json();
+        showToast("19종 샘플 플러그인을 불러왔습니다.");
+        await loadData();
+      } catch (e) {
+        showToast("복원 실패");
+      }
     }
 
     async function scanPlugins() {

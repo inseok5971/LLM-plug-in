@@ -45,6 +45,64 @@ def save_config(data):
     except Exception as e:
         sys.stderr.write(f"설정 파일 저장 오류: {e}\n")
 
+# 컴퓨터에 실제 설치된 AI 앱(Claude, Cursor, Antigravity)만 동적으로 감지
+def detect_installed_apps():
+    home = os.path.expanduser("~")
+    system = platform.system()
+    detected = []
+
+    # 1. Claude Desktop 감지
+    if system == "Darwin":
+        claude_paths = [
+            os.path.join(home, "Library", "Application Support", "Claude"),
+            "/Applications/Claude.app"
+        ]
+    else: # Windows
+        appdata = os.environ.get("APPDATA", "")
+        localappdata = os.environ.get("LOCALAPPDATA", "")
+        claude_paths = [
+            os.path.join(appdata, "Claude"),
+            os.path.join(localappdata, "Programs", "Claude")
+        ]
+    if any(os.path.exists(p) for p in claude_paths if p):
+        detected.append({"id": "claude", "name": "Claude Desktop", "icon": "🟠"})
+
+    # 2. Cursor 감지
+    if system == "Darwin":
+        cursor_paths = [
+            os.path.join(home, ".cursor"),
+            "/Applications/Cursor.app"
+        ]
+    else:
+        localappdata = os.environ.get("LOCALAPPDATA", "")
+        cursor_paths = [
+            os.path.join(home, ".cursor"),
+            os.path.join(localappdata, "Programs", "cursor")
+        ]
+    if any(os.path.exists(p) for p in cursor_paths if p):
+        detected.append({"id": "cursor", "name": "Cursor", "icon": "🔵"})
+
+    # 3. Antigravity 감지 (실제 폴더/설정이 존재하는 컴퓨터에서만 표시!)
+    agy_dir = os.path.join(home, ".gemini", "antigravity")
+    if os.path.exists(agy_dir):
+        detected.append({"id": "antigravity", "name": "Antigravity", "icon": "🟣"})
+
+    # 아무 앱도 감지되지 않았다면 기본적으로 Claude Desktop을 안내용으로 제공
+    if not detected:
+        detected.append({"id": "claude", "name": "Claude Desktop", "icon": "🟠"})
+
+    return detected
+
+def get_sample_plugins():
+    samples_file = os.path.join(BASE_DIR, "samples.json")
+    if os.path.exists(samples_file):
+        try:
+            with open(samples_file, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return []
+
 # HTTP 요청 핸들러 (위젯 UI와 통신)
 class WidgetHandler(SimpleHTTPRequestHandler):
     def end_headers(self):
@@ -70,7 +128,9 @@ class WidgetHandler(SimpleHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.end_headers()
-            self.wfile.write(json.dumps(load_config(), ensure_ascii=False).encode("utf-8"))
+            cfg = load_config()
+            cfg["installed_apps"] = detect_installed_apps()
+            self.wfile.write(json.dumps(cfg, ensure_ascii=False).encode("utf-8"))
             return
         super().do_GET()
 
@@ -149,6 +209,27 @@ class WidgetHandler(SimpleHTTPRequestHandler):
         elif parsed.path == "/api/scan-plugins":
             result = scan_and_merge_plugins()
             self._send_json(result)
+            return
+
+        elif parsed.path == "/api/clear-samples":
+            # 샘플 플러그인(is_sample=True) 모두 제거 -> 사용자의 실제 연동 플러그인만 남김
+            data["plugins"] = [p for p in data.get("plugins", []) if not p.get("is_sample")]
+            save_config(data)
+            self._send_json({"success": True, "count": len(data["plugins"])})
+            return
+
+        elif parsed.path == "/api/restore-samples":
+            # 19개 샘플 플러그인 템플릿 복구
+            current_ids = {p["id"] for p in data.get("plugins", [])}
+            samples = get_sample_plugins()
+            added = 0
+            for sp in samples:
+                if sp["id"] not in current_ids:
+                    data.setdefault("plugins", []).append(sp)
+                    current_ids.add(sp["id"])
+                    added += 1
+            save_config(data)
+            self._send_json({"success": True, "added": added})
             return
 
         self.send_error(404)
@@ -260,9 +341,16 @@ def scan_and_merge_plugins():
                 "name": s_name,
                 "cat": cat,
                 "tag": f"{source_app} 연동",
-                "desc": f"{source_app}에서 자동으로 감지되어 불러온 도구입니다.",
+                "desc": f"{source_app}에서 자동으로 감지되어 불러온 실제 플러그인입니다.",
                 "enabled": True,
-                "source": source_app
+                "enabled_apps": {
+                    "claude": True,
+                    "cursor": True,
+                    "antigravity": True
+                },
+                "source": source_app,
+                "is_real": True,
+                "is_sample": False
             }
             current_config.setdefault("plugins", []).append(new_item)
             added_plugins.append(new_item)
@@ -511,6 +599,12 @@ if __name__ == "__main__":
         run_mcp()
     else:
         # 사용자가 더블클릭해서 미니 리모컨 위젯을 띄울 때 실행되는 모드
+        try:
+            # 컴퓨터에 실제로 설치된 플러그인(MCP 도구) 자동 감지
+            scan_and_merge_plugins()
+        except Exception:
+            pass
+
         port = 8765
         server = ThreadingHTTPServer(("127.0.0.1", port), WidgetHandler)
         t = threading.Thread(target=server.serve_forever, daemon=True)

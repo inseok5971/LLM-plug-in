@@ -1,0 +1,268 @@
+[
+  {
+    "id": "runway",
+    "name": "런웨이 (Runway Gen-3)",
+    "cat": "video",
+    "tag": "실사 영화급",
+    "desc": "초고화질 실사 영화 수준 영상 생성",
+    "enabled": true,
+    "enabled_apps": {
+      "claude": true,
+      "cursor": false,
+      "antigravity": true
+    },
+    "is_sample": true
+  },
+  {
+    "id": "luma",
+    "name": "루마 드림머신 (Luma)",
+    "cat": "video",
+    "tag": "카메라 무빙",
+    "desc": "부드러운 시점 회전과 앵글 이동",
+    "enabled": false,
+    "enabled_apps": {
+      "claude": false,
+      "cursor": false,
+      "antigravity": false
+    },
+    "is_sample": true
+  },
+  {
+    "id": "kling",
+    "name": "클링 (Kling AI)",
+    "cat": "video",
+    "tag": "인물 동작",
+    "desc": "사람 표정과 걷기 등 자연스러운 신체 묘사",
+    "enabled": true,
+    "enabled_apps": {
+      "claude": true,
+      "cursor": false,
+      "antigravity": true
+    },
+    "is_sample": true
+  },
+  {
+    "id": "pika",
+    "name": "피카 (Pika 2.0)",
+    "cat": "video",
+    "tag": "특수효과",
+    "desc": "물체가 녹거나 터지는 재미있는 숏폼 효과",
+    "enabled": true,
+    "enabled_apps": {
+      "claude": true,
+      "cursor": false,
+      "antigravity": false
+    },
+    "is_sample": true
+  },
+  {
+    "id": "midjourney",
+    "name": "미드저니 (Midjourney)",
+    "cat": "image",
+    "tag": "최고 퀄리티",
+    "desc": "가장 뛰어난 예술적 일러스트 그림",
+    "enabled": true,
+    "enabled_apps": {
+      "claude": true,
+      "cursor": false,
+      "antigravity": true
+    },
+    "is_sample": true
+  },
+  {
+    "id": "flux",
+    "name": "플럭스 (FLUX.1)",
+    "cat": "image",
+    "tag": "글자 표기",
+    "desc": "그림 속 영어 텍스트를 정확하게 표현",
+    "enabled": false,
+    "enabled_apps": {
+      "claude": false,
+      "cursor": false,
+      "antigravity": false
+    },
+    "is_sample": true
+  },
+  {
+    "id": "dalle",
+    "name": "달리 3 (DALL-E 3)",
+    "cat": "image",
+    "tag": "설명문 정확도",
+    "desc": "복잡한 설명문도 디테일하게 그림",
+    "enabled": false,
+    "enabled_apps": {
+      "claude": false,
+      "cursor": false,
+      "antigravity": false
+    },
+    "is_sample": true
+  },
+  {
+    "id": "elevenlabs",
+    "name": "일레븐랩스 (ElevenLabs)",
+    "cat": "audio",
+    "tag": "AI 성우",
+    "desc": "사람처럼 감정이 실린 자연스러운 목소리",
+    "enabled": true,
+    "enabled_apps": {
+      "claude": true,
+      "cursor": true,
+      "antigravity": true
+    },
+    "is_sample": true
+  },
+  {
+    "id": "suno",
+    "name": "수노 (Suno 작곡)",
+    "cat": "audio",
+    "tag": "노래 작곡",
+    "desc": "보컬 포함 완성형 노래 음악 작곡",
+    "enabled": false,
+    "enabled_apps": {
+      "claude": false,
+      "cursor": false,
+      "antigravity": false
+    },
+    "is_sample": true
+  },
+  {
+    "id": "whisper",
+    "name": "위스퍼 (Whisper)",
+    "cat": "audio",
+    "tag": "회의록",
+    "desc": "녹음 파일을 정확한 텍스트로 변환",
+    "enabled": false,
+    "enabled_apps": {
+      "claude": false,
+      "cursor": false,
+      "antigravity": true
+    },
+    "is_sample": true
+  },
+  {
+    "id": "google-search",
+    "name": "구글 실시간 웹 검색",
+    "cat": "search",
+    "tag": "최신 뉴스",
+    "desc": "오늘의 뉴스, 실시간 주가 탐색",
+    "enabled": true,
+    "enabled_apps": {
+      "claude": true,
+      "cursor": true,
+      "antigravity": true
+    },
+    "is_sample": true
+  },
+  {
+    "id": "perplexity",
+    "name": "퍼플렉시티 (Perplexity)",
+    "cat": "search",
+    "tag": "출처 요약",
+    "desc": "출처 링크와 함께 핵심 요약",
+    "enabled": true,
+    "enabled_apps": {
+      "claude": true,
+      "cursor": true,
+      "antigravity": true
+    },
+    "is_sample": true
+  },
+  {
+    "id": "pdf-analyzer",
+    "name": "스마트 PDF 분석기",
+    "cat": "office",
+    "tag": "문서 요약",
+    "desc": "긴 계약서나 보고서 PDF의 핵심 요약",
+    "enabled": true,
+    "enabled_apps": {
+      "claude": true,
+      "cursor": true,
+      "antigravity": true
+    },
+    "is_sample": true
+  },
+  {
+    "id": "notion",
+    "name": "노션 (Notion 연동)",
+    "cat": "office",
+    "tag": "메모 저장",
+    "desc": "대화 내용을 내 노션에 새 메모로 저장",
+    "enabled": true,
+    "enabled_apps": {
+      "claude": true,
+      "cursor": true,
+      "antigravity": true
+    },
+    "is_sample": true
+  },
+  {
+    "id": "google-calendar",
+    "name": "구글 캘린더 일정 관리",
+    "cat": "office",
+    "tag": "일정 등록",
+    "desc": "약속 일정을 캘린더에 바로 등록",
+    "enabled": true,
+    "enabled_apps": {
+      "claude": true,
+      "cursor": true,
+      "antigravity": true
+    },
+    "is_sample": true
+  },
+  {
+    "id": "filesystem",
+    "name": "컴퓨터 파일 탐색기",
+    "cat": "system",
+    "tag": "내 컴퓨터",
+    "desc": "내 컴퓨터 폴더 안의 파일 읽기/쓰기",
+    "enabled": true,
+    "enabled_apps": {
+      "claude": true,
+      "cursor": true,
+      "antigravity": true
+    },
+    "is_sample": true
+  },
+  {
+    "id": "terminal",
+    "name": "터미널 명령어 실행기",
+    "cat": "system",
+    "tag": "명령어",
+    "desc": "컴퓨터 설정 및 프로그램 대신 실행",
+    "enabled": true,
+    "enabled_apps": {
+      "claude": true,
+      "cursor": true,
+      "antigravity": true
+    },
+    "is_sample": true
+  },
+  {
+    "id": "puppeteer",
+    "name": "웹 브라우저 자동 조작기",
+    "cat": "browser",
+    "tag": "자동 클릭",
+    "desc": "브라우저 화면 캡처 및 데이터 수집",
+    "enabled": true,
+    "enabled_apps": {
+      "claude": true,
+      "cursor": true,
+      "antigravity": true
+    },
+    "is_sample": true
+  },
+  {
+    "id": "chart-visualizer",
+    "name": "데이터 차트 시각화",
+    "cat": "data",
+    "tag": "예쁜 그래프",
+    "desc": "엑셀 표 데이터를 보기 쉬운 그래프로 변환",
+    "enabled": true,
+    "enabled_apps": {
+      "claude": true,
+      "cursor": true,
+      "antigravity": true
+    },
+    "is_sample": true
+  }
+]

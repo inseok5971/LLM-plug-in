@@ -61,7 +61,8 @@
         "claude": true,
         "cursor": false,
         "antigravity": true
-      }
+      },
+      "is_sample": true
     },
     {
       "id": "luma",
@@ -74,7 +75,8 @@
         "claude": false,
         "cursor": false,
         "antigravity": false
-      }
+      },
+      "is_sample": true
     },
     {
       "id": "kling",
@@ -87,7 +89,8 @@
         "claude": true,
         "cursor": false,
         "antigravity": true
-      }
+      },
+      "is_sample": true
     },
     {
       "id": "pika",
@@ -100,7 +103,8 @@
         "claude": true,
         "cursor": false,
         "antigravity": false
-      }
+      },
+      "is_sample": true
     },
     {
       "id": "midjourney",
@@ -113,7 +117,8 @@
         "claude": true,
         "cursor": false,
         "antigravity": true
-      }
+      },
+      "is_sample": true
     },
     {
       "id": "flux",
@@ -126,7 +131,8 @@
         "claude": false,
         "cursor": false,
         "antigravity": false
-      }
+      },
+      "is_sample": true
     },
     {
       "id": "dalle",
@@ -139,7 +145,8 @@
         "claude": false,
         "cursor": false,
         "antigravity": false
-      }
+      },
+      "is_sample": true
     },
     {
       "id": "elevenlabs",
@@ -152,7 +159,8 @@
         "claude": true,
         "cursor": true,
         "antigravity": true
-      }
+      },
+      "is_sample": true
     },
     {
       "id": "suno",
@@ -165,7 +173,8 @@
         "claude": false,
         "cursor": false,
         "antigravity": false
-      }
+      },
+      "is_sample": true
     },
     {
       "id": "whisper",
@@ -178,7 +187,8 @@
         "claude": false,
         "cursor": false,
         "antigravity": true
-      }
+      },
+      "is_sample": true
     },
     {
       "id": "google-search",
@@ -191,7 +201,8 @@
         "claude": true,
         "cursor": true,
         "antigravity": true
-      }
+      },
+      "is_sample": true
     },
     {
       "id": "perplexity",
@@ -204,7 +215,8 @@
         "claude": true,
         "cursor": true,
         "antigravity": true
-      }
+      },
+      "is_sample": true
     },
     {
       "id": "pdf-analyzer",
@@ -217,7 +229,8 @@
         "claude": true,
         "cursor": true,
         "antigravity": true
-      }
+      },
+      "is_sample": true
     },
     {
       "id": "notion",
@@ -230,7 +243,8 @@
         "claude": true,
         "cursor": true,
         "antigravity": true
-      }
+      },
+      "is_sample": true
     },
     {
       "id": "google-calendar",
@@ -243,7 +257,8 @@
         "claude": true,
         "cursor": true,
         "antigravity": true
-      }
+      },
+      "is_sample": true
     },
     {
       "id": "filesystem",
@@ -256,7 +271,8 @@
         "claude": true,
         "cursor": true,
         "antigravity": true
-      }
+      },
+      "is_sample": true
     },
     {
       "id": "terminal",
@@ -269,7 +285,8 @@
         "claude": true,
         "cursor": true,
         "antigravity": true
-      }
+      },
+      "is_sample": true
     },
     {
       "id": "puppeteer",
@@ -282,7 +299,8 @@
         "claude": true,
         "cursor": true,
         "antigravity": true
-      }
+      },
+      "is_sample": true
     },
     {
       "id": "chart-visualizer",
@@ -295,7 +313,8 @@
         "claude": true,
         "cursor": true,
         "antigravity": true
-      }
+      },
+      "is_sample": true
     }
   ]
 }
