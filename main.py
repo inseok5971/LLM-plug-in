@@ -193,6 +193,27 @@ def scan_and_merge_plugins():
     else:
         scanned_sources.append({"app": "Cursor", "status": "설정 파일 없음", "path": cursor_path, "count": 0, "servers": []})
 
+    # 3. Antigravity 설정 및 플러그인 스캔
+    agy_dir = os.path.join(home, ".gemini", "antigravity")
+    agy_mcp_path = os.path.join(agy_dir, "mcp_config.json")
+    agy_servers = []
+    if os.path.exists(agy_mcp_path):
+        try:
+            with open(agy_mcp_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                for s_name, s_conf in data.get("mcpServers", {}).items():
+                    if s_name != "plugin-switchboard" and s_name not in discovered_servers:
+                        agy_servers.append(s_name)
+                        discovered_servers[s_name] = ("Antigravity", s_conf)
+            scanned_sources.append({"app": "Antigravity", "status": "연결됨", "path": agy_mcp_path, "count": len(agy_servers), "servers": agy_servers})
+        except Exception:
+            scanned_sources.append({"app": "Antigravity", "status": "읽기 오류", "path": agy_mcp_path, "count": 0, "servers": []})
+    elif os.path.exists(agy_dir):
+        # Antigravity 앱 데이터 폴더가 감지된 경우
+        scanned_sources.append({"app": "Antigravity", "status": "연결됨 (앱 감지)", "path": agy_dir, "count": 0, "servers": []})
+    else:
+        scanned_sources.append({"app": "Antigravity", "status": "설치되지 않음", "path": agy_dir, "count": 0, "servers": []})
+
     # 기존 설정 읽기
     current_config = load_config()
     existing_ids = {p["id"] for p in current_config.get("plugins", [])}
@@ -302,6 +323,27 @@ def setup_all_apps():
         with open(cursor_config_path, "w", encoding="utf-8") as f:
             json.dump(conf, f, ensure_ascii=False, indent=2)
         configured_apps.append("Cursor")
+    except Exception:
+        pass
+
+    # 3. Antigravity 설정 등록
+    agy_dir = os.path.join(home, ".gemini", "antigravity")
+    agy_config_path = os.path.join(agy_dir, "mcp_config.json")
+    agy_mcp_entry = {
+        "command": sys.executable,
+        "args": [os.path.join(BASE_DIR, "main.py"), "--mcp", "--app=antigravity"]
+    }
+    try:
+        if os.path.exists(agy_dir):
+            os.makedirs(os.path.dirname(agy_config_path), exist_ok=True)
+            conf = {}
+            if os.path.exists(agy_config_path):
+                with open(agy_config_path, "r", encoding="utf-8") as f:
+                    conf = json.load(f)
+            conf.setdefault("mcpServers", {})["plugin-switchboard"] = agy_mcp_entry
+            with open(agy_config_path, "w", encoding="utf-8") as f:
+                json.dump(conf, f, ensure_ascii=False, indent=2)
+            configured_apps.append("Antigravity")
     except Exception:
         pass
 
