@@ -179,7 +179,7 @@ def launch_desktop_widget(url):
     app_args = [
         f"--app={url}",
         f"--user-data-dir={profile_dir}",
-        "--window-size=380,640",
+        "--window-size=390,700",
         "--window-position=100,100"
     ]
 
