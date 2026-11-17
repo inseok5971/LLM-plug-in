@@ -265,6 +265,10 @@
       cursor: pointer;
     }
     .btn-sync:hover { background: #374151; }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
@@ -280,6 +284,18 @@
       <span>활성: <b id="header-active-count">0</b>개</span>
     </div>
   </header>
+
+  <!-- 스마트 자동 감지 및 불러오기 바 -->
+  <div style="background: #FFFFFF; margin: 10px 14px 4px; padding: 10px 14px; border-radius: 10px; border: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+    <div>
+      <div style="font-size: 12px; font-weight: 700; color: #111827;">내 설치 플러그인 불러오기</div>
+      <div style="font-size: 10.5px; color: #6B7280; margin-top: 1px;">기존 건 두고, 새로 깐 것만 쏙 감지</div>
+    </div>
+    <button id="btn-scan" onclick="scanPlugins()" style="background: #2563EB; color: #FFFFFF; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: background 0.15s;">
+      <span id="scan-spinner">🔄</span>
+      <span>가져오기</span>
+    </button>
+  </div>
 
   <!-- 원클릭 모드 바 -->
   <div class="presets-box">
@@ -389,6 +405,35 @@
       btn.textContent = allExpanded ? "▼ 전체 접기" : "▶ 전체 펼치기";
       const detailsList = document.querySelectorAll("#categories-root details");
       detailsList.forEach(d => d.open = allExpanded);
+    }
+
+    async function scanPlugins() {
+      const btn = document.getElementById("btn-scan");
+      const spinner = document.getElementById("scan-spinner");
+      btn.disabled = true;
+      btn.style.opacity = "0.7";
+      spinner.style.display = "inline-block";
+      spinner.style.animation = "spin 1s linear infinite";
+
+      try {
+        const res = await fetch('/api/scan-plugins', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          if (data.addedCount > 0) {
+            showToast(`🎉 새 플러그인 ${data.addedCount}개를 감지하여 추가했습니다!`);
+            appData.plugins = data.plugins;
+            render();
+          } else {
+            showToast("✓ 이미 모든 설치 플러그인이 최신 상태입니다.");
+          }
+        }
+      } catch (e) {
+        showToast("플러그인 불러오기 중 오류가 발생했습니다.");
+      } finally {
+        btn.disabled = false;
+        btn.style.opacity = "1";
+        spinner.style.animation = "";
+      }
     }
 
     async function togglePlugin(id, enabled) {

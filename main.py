@@ -115,6 +115,11 @@ class WidgetHandler(SimpleHTTPRequestHandler):
             self._send_json({"success": True, "message": msg})
             return
 
+        elif parsed.path == "/api/scan-plugins":
+            result = scan_and_merge_plugins()
+            self._send_json(result)
+            return
+
         self.send_error(404)
 
     def _send_json(self, obj):
@@ -122,6 +127,90 @@ class WidgetHandler(SimpleHTTPRequestHandler):
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.end_headers()
         self.wfile.write(json.dumps(obj, ensure_ascii=False).encode("utf-8"))
+
+# 컴퓨터에 설치된 새 플러그인(MCP 서버)을 스캔하여 중복 없이 자동 추가
+def scan_and_merge_plugins():
+    home = os.path.expanduser("~")
+    system = platform.system()
+    discovered_servers = {}
+
+    # 스캔할 설정 파일 목록
+    candidate_paths = []
+    if system == "Darwin": # macOS
+        candidate_paths.append(os.path.join(home, "Library", "Application Support", "Claude", "claude_desktop_config.json"))
+        candidate_paths.append(os.path.join(home, ".cursor", "mcp.json"))
+    else: # Windows
+        candidate_paths.append(os.path.join(os.environ.get("APPDATA", home), "Claude", "claude_desktop_config.json"))
+        candidate_paths.append(os.path.join(home, ".cursor", "mcp.json"))
+
+    for p in candidate_paths:
+        if os.path.exists(p):
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    servers = data.get("mcpServers", {})
+                    for s_name, s_conf in servers.items():
+                        if s_name != "plugin-switchboard" and s_name not in discovered_servers:
+                            discovered_servers[s_name] = s_conf
+            except Exception:
+                pass
+
+    current_config = load_config()
+    existing_ids = {p["id"] for p in current_config.get("plugins", [])}
+    
+    added_plugins = []
+
+    # 카테고리 자동 추론 규칙
+    def guess_category(name):
+        n = name.lower()
+        if any(k in n for k in ["video", "movie", "luma", "runway", "kling", "pika", "sora", "animate"]):
+            return "video", "영상"
+        elif any(k in n for k in ["image", "draw", "art", "midjourney", "flux", "dalle", "canvas", "photo"]):
+            return "image", "이미지"
+        elif any(k in n for k in ["voice", "audio", "sound", "music", "speech", "tts", "whisper", "suno"]):
+            return "audio", "음성"
+        elif any(k in n for k in ["search", "web", "crawl", "google", "brave", "tavily", "news", "fetch"]):
+            return "search", "검색"
+        elif any(k in n for k in ["doc", "pdf", "sheet", "excel", "notion", "calendar", "mail", "slack", "office"]):
+            return "office", "문서·업무"
+        elif any(k in n for k in ["browser", "puppeteer", "playwright", "selenium"]):
+            return "browser", "브라우저"
+        elif any(k in n for k in ["data", "chart", "sql", "db", "postgres", "sqlite", "graph", "stat"]):
+            return "data", "데이터"
+        else:
+            return "system", "시스템"
+
+    for s_name, s_conf in discovered_servers.items():
+        clean_id = s_name.lower().replace(" ", "-")
+        if clean_id not in existing_ids:
+            cat, tag = guess_category(s_name)
+            new_item = {
+                "id": clean_id,
+                "name": f"{s_name} (설치 감지)",
+                "cat": cat,
+                "tag": tag,
+                "desc": f"내 컴퓨터에서 자동으로 감지된 {s_name} 플러그인입니다.",
+                "enabled": False
+            }
+            current_config.setdefault("plugins", []).append(new_item)
+            added_plugins.append(new_item)
+            existing_ids.add(clean_id)
+
+    if added_plugins:
+        save_config(current_config)
+        return {
+            "success": True,
+            "addedCount": len(added_plugins),
+            "addedNames": [p["name"] for p in added_plugins],
+            "plugins": current_config["plugins"]
+        }
+    else:
+        return {
+            "success": True,
+            "addedCount": 0,
+            "addedNames": [],
+            "plugins": current_config.get("plugins", [])
+        }
 
 # 각 AI 앱 설정 파일 자동 등록 (Claude Desktop, Cursor 등)
 def setup_all_apps():
