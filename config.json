@@ -173,11 +173,11 @@
       "cat": "audio",
       "tag": "회의록",
       "desc": "녹음 파일을 정확한 텍스트로 변환",
-      "enabled": false,
+      "enabled": true,
       "enabled_apps": {
         "claude": false,
         "cursor": false,
-        "antigravity": false
+        "antigravity": true
       }
     },
     {

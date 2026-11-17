@@ -466,8 +466,8 @@ def run_mcp():
 
             if name == "switchboard_status":
                 data = load_config()
-                active = [p["name"] for p in data.get("plugins", []) if p.get("enabled")]
-                msg = f"현재 활성화된 플러그인 ({len(active)}개):\n- " + "\n- ".join(active) if active else "현재 모든 플러그인이 꺼져 있습니다. (순수 대화 모드)"
+                active = [p["name"] for p in data.get("plugins", []) if p.get("enabled_apps", {}).get(target_app, p.get("enabled", False))]
+                msg = f"현재 [{target_app}]에 활성화된 플러그인 ({len(active)}개):\n- " + "\n- ".join(active) if active else f"현재 [{target_app}]의 모든 플러그인이 꺼져 있습니다. (순수 대화 모드)"
                 res = {
                     "jsonrpc": "2.0",
                     "id": req_id,
