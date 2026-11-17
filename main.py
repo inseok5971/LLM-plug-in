@@ -11,7 +11,7 @@ import tempfile
 import threading
 import subprocess
 import platform
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 import urllib.parse
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -497,7 +497,7 @@ if __name__ == "__main__":
     else:
         # 사용자가 더블클릭해서 미니 리모컨 위젯을 띄울 때 실행되는 모드
         port = 8765
-        server = HTTPServer(("127.0.0.1", port), WidgetHandler)
+        server = ThreadingHTTPServer(("127.0.0.1", port), WidgetHandler)
         t = threading.Thread(target=server.serve_forever, daemon=True)
         t.start()
 
